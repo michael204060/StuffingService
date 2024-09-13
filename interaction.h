@@ -9,7 +9,7 @@
 
 using namespace std;
 
-// Определение структуры адреса
+
 struct Address {
     string country;
     string region;
@@ -24,7 +24,7 @@ struct Address {
     void load(ifstream& inFile);
 };
 
-// Базовый класс пользователя
+
 class Person {
 protected:
     string firstName;
@@ -44,7 +44,7 @@ public:
     bool checkPassword(const string& pass) const;
 };
 
-// Класс пользователя
+
 class User : public Person {
 private:
     Address address;
@@ -64,7 +64,7 @@ public:
     void load(ifstream& inFile) override;
 };
 
-// Класс специалиста
+
 class Specialist : public Person {
 private:
     Address address;
@@ -84,7 +84,7 @@ public:
     void load(ifstream& inFile) override;
 };
 
-// Класс администратора
+
 class Admin : public Person {
 public:
     void input() override;
@@ -94,8 +94,8 @@ public:
     void load(ifstream& inFile) override;
 };
 
-// Функции загрузки и сохранения всех пользователей
+
 void saveAll(const vector<Person*>& people);
 void loadAll(vector<Person*>& people);
 
-#endif // INTERACTION_H
+#endif 

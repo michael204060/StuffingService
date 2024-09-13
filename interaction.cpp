@@ -1,6 +1,6 @@
 #include "interaction.h"
 
-// Методы Address
+
 void Address::input() {
     cout << "Enter country: ";
     getline(cin, country);
@@ -46,7 +46,7 @@ void Address::load(ifstream& inFile) {
     inFile.read((char*)&size, sizeof(size)); buffer = new char[size + 1]; inFile.read(buffer, size); buffer[size] = '\0'; apartment = buffer; delete[] buffer;
 }
 
-// Методы Person
+
 void Person::save(ofstream& outFile) const {
     size_t size;
     size = firstName.size(); outFile.write((char*)&size, sizeof(size)); outFile.write(firstName.c_str(), size);
@@ -67,7 +67,7 @@ string Person::getFirstName() const { return firstName; }
 string Person::getLastName() const { return lastName; }
 bool Person::checkPassword(const string& pass) const { return pass == password; }
 
-// Методы User
+
 void User::input() {
     cout << "Enter first name: ";
     getline(cin, firstName);
@@ -98,7 +98,7 @@ double User::getAverageRating() const {
 }
 
 void User::save(ofstream& outFile) const {
-    outFile.write("U", 1);  // Маркер типа User
+    outFile.write("U", 1);  
     Person::save(outFile);
     address.save(outFile);
 
@@ -133,7 +133,7 @@ void User::load(ifstream& inFile) {
     }
 }
 
-// Методы Specialist (аналогичны User)
+
 void Specialist::input() {
     cout << "Enter first name: ";
     getline(cin, firstName);
@@ -164,7 +164,7 @@ double Specialist::getAverageRating() const {
 }
 
 void Specialist::save(ofstream& outFile) const {
-    outFile.write("S", 1);  // Маркер типа Specialist
+    outFile.write("S", 1);  
     Person::save(outFile);
     address.save(outFile);
 
@@ -199,7 +199,7 @@ void Specialist::load(ifstream& inFile) {
     }
 }
 
-// Методы Admin (аналогичны User)
+
 void Admin::input() {
     cout << "Enter first name: ";
     getline(cin, firstName);
@@ -214,7 +214,7 @@ void Admin::display() const {
 }
 
 void Admin::save(ofstream& outFile) const {
-    outFile.write("A", 1);  // Маркер типа Admin
+    outFile.write("A", 1);  
     Person::save(outFile);
 }
 
@@ -222,7 +222,7 @@ void Admin::load(ifstream& inFile) {
     Person::load(inFile);
 }
 
-// Функции загрузки и сохранения всех пользователей
+
 void saveAll(const vector<Person*>& people) {
     ofstream outFile("people.dat", ios::binary);
     size_t size = people.size();
