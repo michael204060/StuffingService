@@ -18,7 +18,12 @@ Course work
 
 Проект разделён на следующие файлы:
 
+- `interaction.cpp`
+- `interaction.h`
+- `main.cpp`
+
 
 
 ## Ссылка на Sonar
 
+https://sonarcloud.io/project/overview?id=michael204060_StuffingService

@@ -1,306 +1,59 @@
-#include <iostream>
-#include <string>
-#include <vector>
-#include <limits>
+#include "interaction.h"
+
+#include "interaction.h"
+#include <iostream>   // Для ввода-вывода
+#include <limits>     // Для numeric_limits
+#include <ios>        // Для streamsize
 #include <algorithm>
-#include <iomanip>
-
-using namespace std;
-
-// Определение структуры адреса
-struct Address {
-    string country;
-    string region;
-    string city;
-    string street;
-    string house;
-    string apartment;
-
-    void input() {
-        cout << "Enter country: ";
-        getline(cin, country);
-        cout << "Enter region: ";
-        getline(cin, region);
-        cout << "Enter city: ";
-        getline(cin, city);
-        cout << "Enter street: ";
-        getline(cin, street);
-        cout << "Enter house: ";
-        getline(cin, house);
-        cout << "Enter apartment: ";
-        getline(cin, apartment);
-    }
-
-    void display() const {
-        cout << "Address: " << country << ", " << region << ", " << city;
-        if (!street.empty()) cout << ", " << street;
-        if (!house.empty()) cout << ", House " << house;
-        if (!apartment.empty()) cout << ", Apt " << apartment;
-        cout << endl;
-    }
-};
-
-// Базовый класс пользователя
-class Person {
-protected:
-    string firstName;
-    string lastName;
-    string password;
-
-public:
-    virtual void input() = 0;
-    virtual void display() const = 0;
-    virtual ~Person() {}
-
-    string getFirstName() const { return firstName; }
-    string getLastName() const { return lastName; }
-    bool checkPassword(const string& pass) const { return pass == password; }
-};
-
-// Класс пользователя
-class User : public Person {
-private:
-    Address address;
-    string contactInfo;
-    vector<int> ratings;
-    vector<string> reviews;
-
-public:
-    void input() override {
-        cout << "Enter first name: ";
-        getline(cin, firstName);
-        cout << "Enter last name: ";
-        getline(cin, lastName);
-        cout << "Enter password: ";
-        getline(cin, password);
-        address.input();
-        cout << "Enter contact info: ";
-        getline(cin, contactInfo);
-    }
-
-    void display() const override {
-        cout << "User Profile: " << firstName << " " << lastName << endl;
-        address.display();
-        cout << "Contact info: " << contactInfo << endl;
-        cout << "Average rating: " << fixed << setprecision(1) << getAverageRating() << endl;
-    }
-
-    void addRating(int rating) {
-        ratings.push_back(rating);
-    }
-
-    void addReview(const string& review) {
-        reviews.push_back(review);
-    }
-
-    double getAverageRating() const {
-        if (ratings.empty()) return 0;
-        double sum = 0;
-        for (int r : ratings) sum += r;
-        return sum / ratings.size();
-    }
-};
-
-// Класс специалиста
-class Specialist : public Person {
-private:
-    string jobProfile;
-    Address address;
-    string contactInfo;
-    vector<int> ratings;
-    vector<string> reviews;
-
-public:
-    void input() override {
-        cout << "Enter first name: ";
-        getline(cin, firstName);
-        cout << "Enter last name: ";
-        getline(cin, lastName);
-        cout << "Enter password: ";
-        getline(cin, password);
-        cout << "Enter job profile: ";
-        getline(cin, jobProfile);
-        address.input();
-        cout << "Enter contact info: ";
-        getline(cin, contactInfo);
-    }
-
-    void display() const override {
-        cout << "Specialist Profile: " << firstName << " " << lastName << endl;
-        cout << "Job Profile: " << jobProfile << endl;
-        address.display();
-        cout << "Contact info: " << contactInfo << endl;
-        cout << "Average rating: " << fixed << setprecision(1) << getAverageRating() << endl;
-    }
-
-    void addRating(int rating) {
-        ratings.push_back(rating);
-    }
-
-    void addReview(const string& review) {
-        reviews.push_back(review);
-    }
-
-    double getAverageRating() const {
-        if (ratings.empty()) return 0;
-        double sum = 0;
-        for (int r : ratings) sum += r;
-        return sum / ratings.size();
-    }
-};
-
-// Класс администратора
-class Admin : public Person {
-public:
-    void input() override {
-        cout << "Enter first name: ";
-        getline(cin, firstName);
-        cout << "Enter last name: ";
-        getline(cin, lastName);
-        cout << "Enter password: ";
-        getline(cin, password);
-    }
-
-    void display() const override {
-        cout << "Admin Profile: " << firstName << " " << lastName << endl;
-    }
-};
-
-// Функция для проверки числового ввода
-int getValidatedInt(const string& prompt, int minValue = 0, int maxValue = 10) {
-    int value;
-    while (true) {
-        cout << prompt;
-        cin >> value;
-        if (!cin.fail() && value >= minValue && value <= maxValue) {
-            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Очистка буфера
-            return value;
-        }
-        cout << "Invalid input, please enter a number between " << minValue << " and " << maxValue << "." << endl;
-        cin.clear();
-        cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Очистка буфера
-    }
-}
-
-// Функция для поиска пользователя по имени и фамилии
-Person* findPerson(vector<Person*>& people, const string& firstName, const string& lastName) {
-    for (Person* person : people) {
-        if (person->getFirstName() == firstName && person->getLastName() == lastName) {
-            return person;
-        }
-    }
-    return nullptr;
-}
-
-// Функция для меню авторизации
-void accountMenu(Person* person, vector<Person*>& people) {
-    int choice;
-    do {
-        cout << "\nAccount Menu:\n";
-        cout << "1. View profile information\n";
-        cout << "2. Delete account\n";
-        cout << "3. Edit profile\n";
-        cout << "0. Log out\n";
-        cout << "Enter your choice: ";
-        cin >> choice;
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
-
-        switch (choice) {
-            case 1:
-                person->display();
-                break;
-            case 2: {
-                string confirmPassword;
-                cout << "Are you sure you want to delete your account? (Enter your password to confirm): ";
-                getline(cin, confirmPassword);
-                if (person->checkPassword(confirmPassword)) {
-                    auto it = find(people.begin(), people.end(), person);
-                    if (it != people.end()) {
-                        delete *it;
-                        people.erase(it);
-                        cout << "Account deleted successfully." << endl;
-                        return;
-                    }
-                } else {
-                    cout << "Incorrect password." << endl;
-                }
-                break;
-            }
-            case 3:
-                cout << "Re-enter your profile information." << endl;
-                person->input();
-                break;
-            case 0:
-                cout << "Logging out..." << endl;
-                break;
-            default:
-                cout << "Invalid choice, please try again." << endl;
-        }
-    } while (choice != 0);
-}
-
-// Основное меню
-void mainMenu(vector<Person*>& people);
 
 int main() {
     vector<Person*> people;
-    mainMenu(people);
 
-    for (Person* person : people) {
-        delete person;
-    }
+    // Загрузка пользователей при запуске
+    loadAll(people);
 
-    return 0;
-}
-
-void mainMenu(vector<Person*>& people) {
     int choice;
+
     do {
-        cout << "\nMain Menu:\n";
-        cout << "1. Create new user\n";
-        cout << "2. Display all people\n";
-        cout << "3. Search profile by name\n";
-        cout << "4. Log in to your account\n";
-        cout << "0. Exit\n";
+        cout << "Main Menu:" << endl;
+        cout << "1. Create new user" << endl;
+        cout << "2. Display all people" << endl;
+        cout << "3. View profile information by name" << endl;
+        cout << "4. Log in" << endl;
+        cout << "0. Exit" << endl;
         cout << "Enter your choice: ";
         cin >> choice;
-        cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Очистка буфера ввода
+        cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Игнорировать лишние символы
 
         switch (choice) {
             case 1: {
-                cout << "Choose type of person to create:\n";
-                cout << "1. User\n";
-                cout << "2. Specialist\n";
-                cout << "3. Admin\n";
-                int personType;
-                cin >> personType;
+                int userType;
+                cout << "Select user type: 1. User, 2. Specialist, 3. Admin: ";
+                cin >> userType;
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
                 Person* person = nullptr;
-                switch (personType) {
-                    case 1:
-                        person = new User();
-                        break;
-                    case 2:
-                        person = new Specialist();
-                        break;
-                    case 3:
-                        person = new Admin();
-                        break;
-                    default:
-                        cout << "Invalid type selected." << endl;
-                        continue;
+                if (userType == 1) {
+                    person = new User();
+                } else if (userType == 2) {
+                    person = new Specialist();
+                } else if (userType == 3) {
+                    person = new Admin();
                 }
 
-                person->input();
-                people.push_back(person);
-                cout << "New person created successfully." << endl;
+                if (person) {
+                    person->input();
+                    people.push_back(person);
+                    cout << "User created successfully." << endl;
+                } else {
+                    cout << "Invalid user type selected." << endl;
+                }
                 break;
             }
             case 2: {
-                for (Person* person : people) {
+                for (const Person* person : people) {
                     person->display();
-                    cout << "-----------------------" << endl;
+                    cout << "--------------------------" << endl;
                 }
                 break;
             }
@@ -310,9 +63,13 @@ void mainMenu(vector<Person*>& people) {
                 getline(cin, firstName);
                 cout << "Enter last name: ";
                 getline(cin, lastName);
-                Person* person = findPerson(people, firstName, lastName);
-                if (person) {
-                    person->display();
+
+                auto it = find_if(people.begin(), people.end(), [&](const Person* person) {
+                    return person->getFirstName() == firstName && person->getLastName() == lastName;
+                });
+
+                if (it != people.end()) {
+                    (*it)->display();
                 } else {
                     cout << "Person not found." << endl;
                 }
@@ -320,15 +77,165 @@ void mainMenu(vector<Person*>& people) {
             }
             case 4: {
                 string firstName, lastName, password;
-                cout << "Enter your first name: ";
+                cout << "Enter first name: ";
                 getline(cin, firstName);
-                cout << "Enter your last name: ";
+                cout << "Enter last name: ";
                 getline(cin, lastName);
-                cout << "Enter your password: ";
+                cout << "Enter password: ";
                 getline(cin, password);
-                Person* person = findPerson(people, firstName, lastName);
-                if (person && person->checkPassword(password)) {
-                    accountMenu(person, people);
+
+                auto it = find_if(people.begin(), people.end(), [&](const Person* person) {
+                    return person->getFirstName() == firstName && person->getLastName() == lastName && person->checkPassword(password);
+                });
+
+                if (it != people.end()) {
+                    cout << "Login successful." << endl;
+                    // Меню для авторизованного пользователя
+                    int loginChoice;
+                    do {
+                        cout << "1. View Profile" << endl;
+                        cout << "2. Delete Account" << endl;
+                        cout << "3. Edit Profile" << endl;
+
+                        // Опции добавления рейтинга и отзыва в зависимости от типа пользователя
+                        User* user = dynamic_cast<User*>(*it);
+                        Specialist* specialist = dynamic_cast<Specialist*>(*it);
+                        Admin* admin = dynamic_cast<Admin*>(*it);
+
+                        if (user) {
+                            cout << "4. Rate and review a Specialist" << endl;
+                        } else if (specialist) {
+                            cout << "4. Rate and review a User" << endl;
+                        } else if (admin) {
+                            cout << "4. Manage User or Specialist Account" << endl;
+                        }
+
+                        cout << "0. Logout" << endl;
+                        cout << "Enter your choice: ";
+                        cin >> loginChoice;
+                        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+                        switch (loginChoice) {
+                            case 1:
+                                (*it)->display();
+                                break;
+                            case 2: {
+                                string confirmPassword;
+                                cout << "Are you sure you want to delete the account? (yes/no): ";
+                                getline(cin, confirmPassword);
+                                if (confirmPassword == "yes") {
+                                    cout << "Enter password to confirm: ";
+                                    getline(cin, confirmPassword);
+                                    if ((*it)->checkPassword(confirmPassword)) {
+                                        delete *it;
+                                        people.erase(it);
+                                        cout << "Account deleted successfully." << endl;
+                                        loginChoice = 0; // Логаут после удаления
+                                    } else {
+                                        cout << "Incorrect password." << endl;
+                                    }
+                                }
+                                break;
+                            }
+                            case 3:
+                                // Редактирование профиля
+                                (*it)->input();
+                                break;
+                            case 4: {
+                                if (user) {
+                                    // Добавление рейтинга и отзыва для специалиста
+                                    string specFirstName, specLastName;
+                                    cout << "Enter the first name of the Specialist: ";
+                                    getline(cin, specFirstName);
+                                    cout << "Enter the last name of the Specialist: ";
+                                    getline(cin, specLastName);
+
+                                    auto specIt = find_if(people.begin(), people.end(), [&](const Person* person) {
+                                        Specialist* spec = dynamic_cast<Specialist*>(const_cast<Person*>(person));
+                                        return spec && spec->getFirstName() == specFirstName && spec->getLastName() == specLastName;
+                                    });
+
+                                    if (specIt != people.end()) {
+                                        int rating;
+                                        do {
+                                            cout << "Enter rating (0 to 10): ";
+                                            cin >> rating;
+                                            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                                        } while (rating < 0 || rating > 10);
+
+                                        string review;
+                                        cout << "Enter review: ";
+                                        getline(cin, review);
+
+                                        Specialist* spec = dynamic_cast<Specialist*>(*specIt);
+                                        spec->addRating(rating);
+                                        spec->addReview(review);
+                                        cout << "Rating and review added successfully." << endl;
+                                    } else {
+                                        cout << "Specialist not found." << endl;
+                                    }
+                                } else if (specialist) {
+                                    // Добавление рейтинга и отзыва для пользователя
+                                    string userFirstName, userLastName;
+                                    cout << "Enter the first name of the User: ";
+                                    getline(cin, userFirstName);
+                                    cout << "Enter the last name of the User: ";
+                                    getline(cin, userLastName);
+
+                                    auto userIt = find_if(people.begin(), people.end(), [&](const Person* person) {
+                                        User* u = dynamic_cast<User*>(const_cast<Person*>(person));
+                                        return u && u->getFirstName() == userFirstName && u->getLastName() == userLastName;
+                                    });
+
+                                    if (userIt != people.end()) {
+                                        int rating;
+                                        do {
+                                            cout << "Enter rating (0 to 10): ";
+                                            cin >> rating;
+                                            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                                        } while (rating < 0 || rating > 10);
+
+                                        string review;
+                                        cout << "Enter review: ";
+                                        getline(cin, review);
+
+                                        User* usr = dynamic_cast<User*>(*userIt);
+                                        usr->addRating(rating);
+                                        usr->addReview(review);
+                                        cout << "Rating and review added successfully." << endl;
+                                    } else {
+                                        cout << "User not found." << endl;
+                                    }
+                                } else if (admin) {
+                                    // Управление аккаунтами пользователей и специалистов
+                                    string personFirstName, personLastName;
+                                    cout << "Enter the first name of the person to manage: ";
+                                    getline(cin, personFirstName);
+                                    cout << "Enter the last name of the person to manage: ";
+                                    getline(cin, personLastName);
+
+                                    auto personIt = find_if(people.begin(), people.end(), [&](const Person* person) {
+                                        return person->getFirstName() == personFirstName && person->getLastName() == personLastName && !dynamic_cast<Admin*>(const_cast<Person*>(person));
+                                    });
+
+                                    if (personIt != people.end()) {
+                                        cout << "Account found. Deleting account." << endl;
+                                        delete *personIt;
+                                        people.erase(personIt);
+                                        cout << "Account deleted successfully." << endl;
+                                    } else {
+                                        cout << "Person not found or is an admin." << endl;
+                                    }
+                                }
+                                break;
+                            }
+                            case 0:
+                                cout << "Logged out." << endl;
+                                break;
+                            default:
+                                cout << "Invalid choice. Try again." << endl;
+                        }
+                    } while (loginChoice != 0);
                 } else {
                     cout << "Invalid login credentials." << endl;
                 }
@@ -338,7 +245,17 @@ void mainMenu(vector<Person*>& people) {
                 cout << "Exiting program." << endl;
                 break;
             default:
-                cout << "Invalid choice, please try again." << endl;
+                cout << "Invalid choice. Try again." << endl;
         }
     } while (choice != 0);
+
+    // Сохранение пользователей перед завершением программы
+    saveAll(people);
+
+    // Очистка памяти
+    for (Person* person : people) {
+        delete person;
+    }
+
+    return 0;
 }

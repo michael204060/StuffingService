@@ -3,4 +3,6 @@ project(AwesomeProjectPlus)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(AwesomeProjectPlus main.cpp)
+add_executable(AwesomeProjectPlus main.cpp
+        interaction.cpp
+        interaction.h)
