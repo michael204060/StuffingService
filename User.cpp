@@ -1,5 +1,5 @@
 #include "User.h"
-#include <iomanip>  // Добавляем заголовок для setprecision
+#include <iomanip>
 
 void User::input() {
     cout << "Enter first name: ";

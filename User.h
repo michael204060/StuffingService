@@ -11,7 +11,6 @@
 using namespace std;
 
 class User : public Person {
-private:
     Address address;
     string contactInfo;
     vector<int> ratings;
@@ -29,4 +28,4 @@ public:
     void load(ifstream& inFile) override;
 };
 
-#endif // USER_H
+#endif

@@ -10,7 +10,6 @@
 using namespace std;
 
 class Admin : public Person {
-private:
     vector<string> privileges;
 
 public:

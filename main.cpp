@@ -6,15 +6,71 @@
 #include <iostream>
 #include <limits>
 #include <algorithm>
-#include <vector>  // Добавляем заголовок для std::vector
+#include <vector>
+#include <fstream>
 
 using namespace std;
 
+void save(const vector<Person*>& people) {
+    ofstream file("people.bin", ios::binary);  // Открываем файл в бинарном режиме
+    if (!file.is_open()) {
+        cout << "Error: Could not open people.bin for writing." << endl;
+        return;
+    }
+    for (const Person* person : people) {
+        // Сначала записываем тип пользователя (1 - User, 2 - Specialist, 3 - Admin)
+        int userType = 0;
+        if (dynamic_cast<const User*>(person)) {
+            userType = 1;
+        } else if (dynamic_cast<const Specialist*>(person)) {
+            userType = 2;
+        } else if (dynamic_cast<const Admin*>(person)) {
+            userType = 3;
+        }
+
+        file.write(reinterpret_cast<const char*>(&userType), sizeof(userType));
+
+        // Сохраняем информацию о пользователе
+        person->save(file);
+    }
+    file.close();
+}
+
+void load(vector<Person*>& people) {
+    ifstream file("people.bin", ios::binary);  // Открываем файл в бинарном режиме
+    if (!file.is_open()) {
+        cout << "Error: Could not open people.bin for reading." << endl;
+        return;
+    }
+
+    while (true) {
+        int userType;
+        file.read(reinterpret_cast<char*>(&userType), sizeof(userType));
+
+        if (file.eof()) break;  // Прерываем цикл, если больше нет данных для чтения
+
+        Person* person = nullptr;
+        if (userType == 1) {
+            person = new User();
+        } else if (userType == 2) {
+            person = new Specialist();
+        } else if (userType == 3) {
+            person = new Admin();
+        }
+
+        if (person != nullptr) {
+            person->load(file); // Загрузка данных о пользователе
+            people.push_back(person);
+        }
+    }
+
+    file.close();
+}
+
+
 int main() {
     vector<Person*> people;
-
-    loadAll(people);  // Убедитесь, что функция loadAll определена и подключена
-
+    load(people);
     int choice;
 
     do {
@@ -246,7 +302,7 @@ int main() {
         }
     } while (choice != 0);
 
-    saveAll(people);  // Убедитесь, что функция saveAll определена и подключена
+    save(people);
 
     for (Person* person : people) {
         delete person;

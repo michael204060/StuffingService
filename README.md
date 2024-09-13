@@ -18,9 +18,18 @@ Course work
 
 Проект разделён на следующие файлы:
 
-- `interaction.cpp`
-- `interaction.h`
+- `Address.cpp`
+- `Address.h`
+- `Admin.cpp`
+- `Admin.h`
+- `Person.cpp`
+- `Person.h`
+- `Specialist.cpp`
+- `Specialist.h`
+- `User.cpp`
+- `User.h`
 - `main.cpp`
+
 
 
 
