@@ -26,4 +26,4 @@ Course work
 
 ## Ссылка на Sonar
 
-https://sonarcloud.io/project/overview?id=michael204060_StuffingService
+[sonar](https://sonarcloud.io/project/overview?id=michael204060_StuffingService)
