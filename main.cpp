@@ -1,14 +1,19 @@
-#include "interaction.h"
-
-#include <iostream>   
-#include <limits>     
-#include <ios>        
+#include "Address.h"
+#include "Person.h"
+#include "Admin.h"
+#include "User.h"
+#include "Specialist.h"
+#include <iostream>
+#include <limits>
 #include <algorithm>
+#include <vector>  // Добавляем заголовок для std::vector
+
+using namespace std;
 
 int main() {
     vector<Person*> people;
-    
-    loadAll(people);
+
+    loadAll(people);  // Убедитесь, что функция loadAll определена и подключена
 
     int choice;
 
@@ -21,7 +26,7 @@ int main() {
         cout << "0. Exit" << endl;
         cout << "Enter your choice: ";
         cin >> choice;
-        cin.ignore(numeric_limits<streamsize>::max(), '\n'); 
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
         switch (choice) {
             case 1: {
@@ -37,15 +42,14 @@ int main() {
                     person = new Specialist();
                 } else if (userType == 3) {
                     person = new Admin();
-                }
-
-                if (person) {
-                    person->input();
-                    people.push_back(person);
-                    cout << "User created successfully." << endl;
                 } else {
                     cout << "Invalid user type selected." << endl;
+                    break;
                 }
+
+                person->input();
+                people.push_back(person);
+                cout << "User created successfully." << endl;
                 break;
             }
             case 2: {
@@ -88,14 +92,13 @@ int main() {
 
                 if (it != people.end()) {
                     cout << "Login successful." << endl;
-                    
+
                     int loginChoice;
                     do {
                         cout << "1. View Profile" << endl;
                         cout << "2. Delete Account" << endl;
                         cout << "3. Edit Profile" << endl;
 
-                        
                         User* user = dynamic_cast<User*>(*it);
                         Specialist* specialist = dynamic_cast<Specialist*>(*it);
                         Admin* admin = dynamic_cast<Admin*>(*it);
@@ -128,7 +131,7 @@ int main() {
                                         delete *it;
                                         people.erase(it);
                                         cout << "Account deleted successfully." << endl;
-                                        loginChoice = 0; 
+                                        loginChoice = 0;
                                     } else {
                                         cout << "Incorrect password." << endl;
                                     }
@@ -136,12 +139,10 @@ int main() {
                                 break;
                             }
                             case 3:
-                                
                                 (*it)->input();
                                 break;
                             case 4: {
                                 if (user) {
-                                    
                                     string specFirstName, specLastName;
                                     cout << "Enter the first name of the Specialist: ";
                                     getline(cin, specFirstName);
@@ -173,7 +174,6 @@ int main() {
                                         cout << "Specialist not found." << endl;
                                     }
                                 } else if (specialist) {
-                                    
                                     string userFirstName, userLastName;
                                     cout << "Enter the first name of the User: ";
                                     getline(cin, userFirstName);
@@ -205,7 +205,6 @@ int main() {
                                         cout << "User not found." << endl;
                                     }
                                 } else if (admin) {
-                                    
                                     string personFirstName, personLastName;
                                     cout << "Enter the first name of the person to manage: ";
                                     getline(cin, personFirstName);
@@ -247,10 +246,8 @@ int main() {
         }
     } while (choice != 0);
 
-    
-    saveAll(people);
+    saveAll(people);  // Убедитесь, что функция saveAll определена и подключена
 
-    
     for (Person* person : people) {
         delete person;
     }
