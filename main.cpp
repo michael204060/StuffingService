@@ -12,13 +12,12 @@
 using namespace std;
 
 void save(const vector<Person*>& people) {
-    ofstream file("people.bin", ios::binary);  // Открываем файл в бинарном режиме
+    ofstream file("people.bin", ios::binary | ios::trunc);
     if (!file.is_open()) {
         cout << "Error: Could not open people.bin for writing." << endl;
         return;
     }
     for (const Person* person : people) {
-        // Сначала записываем тип пользователя (1 - User, 2 - Specialist, 3 - Admin)
         int userType = 0;
         if (dynamic_cast<const User*>(person)) {
             userType = 1;
@@ -29,15 +28,13 @@ void save(const vector<Person*>& people) {
         }
 
         file.write(reinterpret_cast<const char*>(&userType), sizeof(userType));
-
-        // Сохраняем информацию о пользователе
         person->save(file);
     }
     file.close();
 }
 
 void load(vector<Person*>& people) {
-    ifstream file("people.bin", ios::binary);  // Открываем файл в бинарном режиме
+    ifstream file("people.bin", ios::binary | ios::app);
     if (!file.is_open()) {
         cout << "Error: Could not open people.bin for reading." << endl;
         return;
@@ -45,28 +42,44 @@ void load(vector<Person*>& people) {
 
     while (true) {
         int userType;
-        file.read(reinterpret_cast<char*>(&userType), sizeof(userType));
-
-        if (file.eof()) break;  // Прерываем цикл, если больше нет данных для чтения
-
-        Person* person = nullptr;
-        if (userType == 1) {
-            person = new User();
-        } else if (userType == 2) {
-            person = new Specialist();
-        } else if (userType == 3) {
-            person = new Admin();
+        if (!file.read(reinterpret_cast<char*>(&userType), sizeof(userType))) {
+            if (file.eof()) break;
+            cout << "Error: Failed to read userType." << endl;
+            break;
         }
 
-        if (person != nullptr) {
-            person->load(file); // Загрузка данных о пользователе
+        Person* person = nullptr;
+        switch (userType) {
+            case 1:
+                person = new User();
+                break;
+            case 2:
+                person = new Specialist();
+                break;
+            case 3:
+                person = new Admin();
+                break;
+            default:
+                cout << "Error: Invalid userType." << endl;
+                continue;
+        }
+
+        try {
+            person->load(file);
             people.push_back(person);
+        } catch (const std::bad_alloc& e) {
+            cout << "Memory allocation error: " << e.what() << endl;
+            delete person;
+            break;
+        } catch (const std::exception& e) {
+            cout << "Error loading person data: " << e.what() << endl;
+            delete person;
+            break;
         }
     }
 
     file.close();
 }
-
 
 int main() {
     vector<Person*> people;
@@ -198,88 +211,7 @@ int main() {
                                 (*it)->input();
                                 break;
                             case 4: {
-                                if (user) {
-                                    string specFirstName, specLastName;
-                                    cout << "Enter the first name of the Specialist: ";
-                                    getline(cin, specFirstName);
-                                    cout << "Enter the last name of the Specialist: ";
-                                    getline(cin, specLastName);
 
-                                    auto specIt = find_if(people.begin(), people.end(), [&](const Person* person) {
-                                        Specialist* spec = dynamic_cast<Specialist*>(const_cast<Person*>(person));
-                                        return spec && spec->getFirstName() == specFirstName && spec->getLastName() == specLastName;
-                                    });
-
-                                    if (specIt != people.end()) {
-                                        int rating;
-                                        do {
-                                            cout << "Enter rating (0 to 10): ";
-                                            cin >> rating;
-                                            cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                                        } while (rating < 0 || rating > 10);
-
-                                        string review;
-                                        cout << "Enter review: ";
-                                        getline(cin, review);
-
-                                        Specialist* spec = dynamic_cast<Specialist*>(*specIt);
-                                        spec->addRating(rating);
-                                        spec->addReview(review);
-                                        cout << "Rating and review added successfully." << endl;
-                                    } else {
-                                        cout << "Specialist not found." << endl;
-                                    }
-                                } else if (specialist) {
-                                    string userFirstName, userLastName;
-                                    cout << "Enter the first name of the User: ";
-                                    getline(cin, userFirstName);
-                                    cout << "Enter the last name of the User: ";
-                                    getline(cin, userLastName);
-
-                                    auto userIt = find_if(people.begin(), people.end(), [&](const Person* person) {
-                                        User* u = dynamic_cast<User*>(const_cast<Person*>(person));
-                                        return u && u->getFirstName() == userFirstName && u->getLastName() == userLastName;
-                                    });
-
-                                    if (userIt != people.end()) {
-                                        int rating;
-                                        do {
-                                            cout << "Enter rating (0 to 10): ";
-                                            cin >> rating;
-                                            cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                                        } while (rating < 0 || rating > 10);
-
-                                        string review;
-                                        cout << "Enter review: ";
-                                        getline(cin, review);
-
-                                        User* usr = dynamic_cast<User*>(*userIt);
-                                        usr->addRating(rating);
-                                        usr->addReview(review);
-                                        cout << "Rating and review added successfully." << endl;
-                                    } else {
-                                        cout << "User not found." << endl;
-                                    }
-                                } else if (admin) {
-                                    string personFirstName, personLastName;
-                                    cout << "Enter the first name of the person to manage: ";
-                                    getline(cin, personFirstName);
-                                    cout << "Enter the last name of the person to manage: ";
-                                    getline(cin, personLastName);
-
-                                    auto personIt = find_if(people.begin(), people.end(), [&](const Person* person) {
-                                        return person->getFirstName() == personFirstName && person->getLastName() == personLastName && !dynamic_cast<Admin*>(const_cast<Person*>(person));
-                                    });
-
-                                    if (personIt != people.end()) {
-                                        cout << "Account found. Deleting account." << endl;
-                                        delete *personIt;
-                                        people.erase(personIt);
-                                        cout << "Account deleted successfully." << endl;
-                                    } else {
-                                        cout << "Person not found or is an admin." << endl;
-                                    }
-                                }
                                 break;
                             }
                             case 0:
@@ -307,6 +239,6 @@ int main() {
     for (Person* person : people) {
         delete person;
     }
-
+    people.clear();
     return 0;
 }
