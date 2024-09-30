@@ -1,4 +1,4 @@
-#include "Person.h"
+#include "headers/Person.h"
 
 void Person::save(ofstream& outFile) const {
     size_t size;

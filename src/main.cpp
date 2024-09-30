@@ -1,8 +1,8 @@
-#include "Address.h"
-#include "Person.h"
-#include "Admin.h"
-#include "User.h"
-#include "Specialist.h"
+#include "headers/Address.h"
+#include "headers/Admin.h"
+#include "headers/Person.h"
+#include "headers/User.h"
+#include "headers/Specialist.h"
 #include <iostream>
 #include <limits>
 #include <algorithm>
