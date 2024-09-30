@@ -36,7 +36,13 @@ void save(const vector<Person*>& people) {
 void load(vector<Person*>& people) {
     ifstream file("people.bin", ios::binary);
     if (!file.is_open()) {
-        cout << "Error: Could not open people.bin for reading." << endl;
+        cout << "people.bin not found. Would you like to create a new file? (yes/no): ";
+        string response;
+        getline(cin, response);
+        if (response == "yes") {
+            save(people);
+            cout << "New file created." << endl;
+        }
         return;
     }
 

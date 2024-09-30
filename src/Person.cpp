@@ -11,9 +11,7 @@ void Person::load(ifstream& inFile) {
 
     size_t size;
     char* buffer;
-    cout<<(char*)size<<endl;
     inFile.read((char*)&size, sizeof(size)); buffer = new char[size + 1]; inFile.read(buffer, size); buffer[size] = '\0'; firstName = buffer; delete[] buffer;
-    cout<<buffer<<endl;
 
     inFile.read((char*)&size, sizeof(size)); buffer = new char[size + 1]; inFile.read(buffer, size); buffer[size] = '\0'; lastName = buffer; delete[] buffer;
     inFile.read((char*)&size, sizeof(size)); buffer = new char[size + 1]; inFile.read(buffer, size); buffer[size] = '\0'; password = buffer; delete[] buffer;
