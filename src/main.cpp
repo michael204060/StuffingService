@@ -34,7 +34,7 @@ void save(const vector<Person*>& people) {
 }
 
 void load(vector<Person*>& people) {
-    ifstream file("people.bin", ios::binary | ios::app);
+    ifstream file("people.bin", ios::binary);
     if (!file.is_open()) {
         cout << "Error: Could not open people.bin for reading." << endl;
         return;
@@ -51,25 +51,30 @@ void load(vector<Person*>& people) {
         Person* person = nullptr;
         switch (userType) {
             case 1:
-                person = new User();
+                person = new (nothrow) User();
                 break;
             case 2:
-                person = new Specialist();
+                person = new (nothrow) Specialist();
                 break;
             case 3:
-                person = new Admin();
+                person = new (nothrow) Admin();
                 break;
             default:
                 cout << "Error: Invalid userType." << endl;
                 continue;
         }
 
+        if (person == nullptr) {
+            cout << "Memory allocation error: Failed to allocate memory for person object." << endl;
+            break;
+        }
+
         try {
             person->load(file);
             people.push_back(person);
         } catch (const std::bad_alloc& e) {
-            cout << "Memory allocation error: " << e.what() << endl;
-            delete person;
+           // cout << "Memory allocation error: " << e.what() << endl;
+           // delete person;
             break;
         } catch (const std::exception& e) {
             cout << "Error loading person data: " << e.what() << endl;
@@ -79,6 +84,26 @@ void load(vector<Person*>& people) {
     }
 
     file.close();
+}
+
+void deleteAccountByName(vector<Person*>& people) {
+    string firstName, lastName;
+    cout << "Enter first name: ";
+    getline(cin, firstName);
+    cout << "Enter last name: ";
+    getline(cin, lastName);
+
+    auto it = find_if(people.begin(), people.end(), [&](const Person* person) {
+        return person->getFirstName() == firstName && person->getLastName() == lastName;
+    });
+
+    if (it != people.end()) {
+        delete *it;
+        people.erase(it);
+        cout << "Account deleted successfully." << endl;
+    } else {
+        cout << "Person not found." << endl;
+    }
 }
 
 int main() {
@@ -106,13 +131,18 @@ int main() {
 
                 Person* person = nullptr;
                 if (userType == 1) {
-                    person = new User();
+                    person = new (nothrow) User();
                 } else if (userType == 2) {
-                    person = new Specialist();
+                    person = new (nothrow) Specialist();
                 } else if (userType == 3) {
-                    person = new Admin();
+                    person = new (nothrow) Admin();
                 } else {
                     cout << "Invalid user type selected." << endl;
+                    break;
+                }
+
+                if (person == nullptr) {
+                    cout << "Error: Memory allocation failed while creating new user." << endl;
                     break;
                 }
 
@@ -177,7 +207,7 @@ int main() {
                         } else if (specialist) {
                             cout << "4. Rate and review a User" << endl;
                         } else if (admin) {
-                            cout << "4. Manage User or Specialist Account" << endl;
+                            cout << "4. Delete User by name" << endl;
                         }
 
                         cout << "0. Logout" << endl;
@@ -210,10 +240,9 @@ int main() {
                             case 3:
                                 (*it)->input();
                                 break;
-                            case 4: {
-
+                            case 4:
+                                deleteAccountByName(people);
                                 break;
-                            }
                             case 0:
                                 cout << "Logged out." << endl;
                                 break;
