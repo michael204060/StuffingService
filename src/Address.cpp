@@ -1,46 +1,68 @@
 #include "headers/Address.h"
+#include <iostream>
 
 void Address::input() {
-    cout << "Enter country: ";
-    getline(cin, country);
-    cout << "Enter region: ";
-    getline(cin, region);
-    cout << "Enter city: ";
-    getline(cin, city);
-    cout << "Enter street: ";
-    getline(cin, street);
-    cout << "Enter house: ";
-    getline(cin, house);
-    cout << "Enter apartment: ";
-    getline(cin, apartment);
+    std::cout << "Enter country: ";
+    std::getline(std::cin, country);
+    std::cout << "Enter region: ";
+    std::getline(std::cin, region);
+    std::cout << "Enter city: ";
+    std::getline(std::cin, city);
+    std::cout << "Enter street: ";
+    std::getline(std::cin, street);
+    std::cout << "Enter house: ";
+    std::getline(std::cin, house);
+    std::cout << "Enter apartment: ";
+    std::getline(std::cin, apartment);
 }
 
 void Address::display() const {
-    cout << "Address: " << country << ", " << region << ", " << city;
-    if (!street.empty()) cout << ", " << street;
-    if (!house.empty()) cout << ", House " << house;
-    if (!apartment.empty()) cout << ", Apt " << apartment;
-    cout << endl;
+    std::cout << "Address: " << country << ", " << region << ", " << city;
+    if (!street.empty()) std::cout << ", " << street;
+    if (!house.empty()) std::cout << ", House " << house;
+    if (!apartment.empty()) std::cout << ", Apt " << apartment;
+    std::cout << std::endl;
 }
 
-void Address::save(ofstream& outFile) const {
-    size_t size;
-    size = country.size(); outFile.write((char*)&size, sizeof(size)); outFile.write(country.c_str(), size);
-    size = region.size(); outFile.write((char*)&size, sizeof(size)); outFile.write(region.c_str(), size);
-    size = city.size(); outFile.write((char*)&size, sizeof(size)); outFile.write(city.c_str(), size);
-    size = street.size(); outFile.write((char*)&size, sizeof(size)); outFile.write(street.c_str(), size);
-    size = house.size(); outFile.write((char*)&size, sizeof(size)); outFile.write(house.c_str(), size);
-    size = apartment.size(); outFile.write((char*)&size, sizeof(size)); outFile.write(apartment.c_str(), size);
+void Address::bindToStatement(sqlite3_stmt* stmt, int& index) const {
+    sqlite3_bind_text(stmt, index++, country.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, index++, region.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, index++, city.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, index++, street.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, index++, house.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, index++, apartment.c_str(), -1, SQLITE_TRANSIENT);
+}
+void Address::loadFromStatement(sqlite3_stmt* stmt) {
+    const char *countryValue = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
+    if (countryValue != nullptr) {
+        country = countryValue;
+    }
+
+    const char *regionValue = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
+    if (regionValue != nullptr) {
+        region = regionValue;
+    }
+
+    const char *cityValue = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7));
+    if (cityValue != nullptr) {
+        city = cityValue;
+    }
+
+    const char *streetValue = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 8));
+    if (streetValue != nullptr) {
+        street = streetValue;
+    }
+
+    const char *houseValue = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 9));
+    if (houseValue != nullptr) {
+        house = houseValue;
+    }
+
+    const char *apartmentValue = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 10))   ;
+    if (apartmentValue != nullptr) {
+        apartment = apartmentValue;
+    }
 }
 
-void Address::load(ifstream& inFile) {
-    size_t size;
-    char* buffer;
 
-    inFile.read((char*)&size, sizeof(size)); buffer = new char[size + 1]; inFile.read(buffer, size); buffer[size] = '\0'; country = buffer; delete[] buffer;
-    inFile.read((char*)&size, sizeof(size)); buffer = new char[size + 1]; inFile.read(buffer, size); buffer[size] = '\0'; region = buffer; delete[] buffer;
-    inFile.read((char*)&size, sizeof(size)); buffer = new char[size + 1]; inFile.read(buffer, size); buffer[size] = '\0'; city = buffer; delete[] buffer;
-    inFile.read((char*)&size, sizeof(size)); buffer = new char[size + 1]; inFile.read(buffer, size); buffer[size] = '\0'; street = buffer; delete[] buffer;
-    inFile.read((char*)&size, sizeof(size)); buffer = new char[size + 1]; inFile.read(buffer, size); buffer[size] = '\0'; house = buffer; delete[] buffer;
-    inFile.read((char*)&size, sizeof(size)); buffer = new char[size + 1]; inFile.read(buffer, size); buffer[size] = '\0'; apartment = buffer; delete[] buffer;
-}
+

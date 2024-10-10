@@ -1,46 +1,88 @@
 #include "headers/Specialist.h"
+#include <iostream>
+#include <sstream>
+#include <limits>
 
 void Specialist::input() {
     User::input();
-    cout << "Enter specialization: ";
-    getline(cin, specialization);
+    std::cout << "Enter specialization: ";
+    std::getline(std::cin, specialization);
+
+    int numCertifications;
+    std::cout << "Enter the number of certifications: ";
+    std::cin >> numCertifications;
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+    certifications.resize(numCertifications);
+    for (int i = 0; i < numCertifications; ++i) {
+        std::cout << "Enter certification #" << i + 1 << ": ";
+        std::getline(std::cin, certifications[i]);
+    }
 }
 
 void Specialist::display() const {
     User::display();
-    cout << "Specialization: " << specialization << endl;
+    std::cout << "Specialization: " << specialization << std::endl;
     if (!certifications.empty()) {
-        cout << "Certifications: ";
-        for (const string& cert : certifications) cout << cert << ", ";
-        cout << endl;
+        std::cout << "Certifications: ";
+        for (const std::string& cert : certifications) std::cout << cert << ", ";
+        std::cout << std::endl;
     }
 }
 
-void Specialist::addCertification(const string& certification) {
+void Specialist::addCertification(const std::string& certification) {
     certifications.push_back(certification);
 }
 
-void Specialist::save(ofstream& outFile) const {
-    outFile.write("S", 1);
-    User::save(outFile);
-
-    size_t size = specialization.size(); outFile.write((char*)&size, sizeof(size)); outFile.write(specialization.c_str(), size);
-    size = certifications.size(); outFile.write((char*)&size, sizeof(size));
-    for (const string& cert : certifications) {
-        size = cert.size(); outFile.write((char*)&size, sizeof(size)); outFile.write(cert.c_str(), size);
-    }
+void Specialist::addRating(int rating) {
+    User::addRating(rating);
 }
 
-void Specialist::load(ifstream& inFile) {
-    User::load(inFile);
-    size_t size;
-    char* buffer;
+void Specialist::addReview(const std::string& review) {
+    User::addReview(review);
+}
 
-    inFile.read((char*)&size, sizeof(size)); buffer = new char[size + 1]; inFile.read(buffer, size); buffer[size] = '\0'; specialization = buffer; delete[] buffer;
+void Specialist::bindToStatement(sqlite3_stmt* stmt, int &index) const {
+    User::bindToStatement(stmt, index);
+    sqlite3_bind_text(stmt, index++, specialization.c_str(), -1, SQLITE_TRANSIENT);
 
-    inFile.read((char*)&size, sizeof(size));
-    certifications.resize(size);
-    for (size_t i = 0; i < size; ++i) {
-        inFile.read((char*)&size, sizeof(size)); buffer = new char[size + 1]; inFile.read(buffer, size); buffer[size] = '\0'; certifications[i] = buffer; delete[] buffer;
+    std::string certificationsStr;
+    for (const auto& cert : certifications) {
+        certificationsStr += cert + ",";
+    }
+    if (!certificationsStr.empty()) {
+        certificationsStr.pop_back();
+    }
+    sqlite3_bind_text(stmt, index++, certificationsStr.c_str(), -1, SQLITE_TRANSIENT);
+}
+
+// void Specialist::loadFromStatement(sqlite3_stmt* stmt) {
+//     User::loadFromStatement(stmt);
+//     specialization = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 12)); // Index might need adjustment
+//
+//     std::string certificationsStr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 13)); // Index might need adjustment
+//     certifications.clear();
+//     std::stringstream ss(certificationsStr);
+//     std::string cert;
+//     while (std::getline(ss, cert, ',')) {
+//         if (!cert.empty()) certifications.push_back(cert);
+//     }
+// }
+void Specialist::loadFromStatement(sqlite3_stmt* stmt) {
+    User::loadFromStatement(stmt);
+    const char *specializationValue = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 12));
+    if (specializationValue != nullptr) {
+        specialization = specializationValue;
+    }
+
+    const char *certificationsValue = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 13));
+    if (certificationsValue != nullptr) {
+        std::string certificationsStr(certificationsValue);
+        certifications.clear();
+        std::stringstream ss(certificationsStr);
+        std::string cert;
+        while (std::getline(ss, cert, ',')) {
+            if (!cert.empty()) certifications.push_back(cert);
+        }
     }
 }

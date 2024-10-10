@@ -1,29 +1,48 @@
-#ifndef PERSON_H
+﻿#ifndef PERSON_H
 #define PERSON_H
 
-#include <iostream>
 #include <string>
-#include <fstream>
+#include <iostream>
+#include <sqlite3.h>
 
-using namespace std;
 
 class Person {
 protected:
-    string firstName;
-    string lastName;
-    string password;
+    std::string firstName;
+    std::string lastName;
+    std::string password;
 
 public:
-    virtual void input() = 0;
-    virtual void display() const = 0;
+    virtual void input();
+    virtual void display() const;
     virtual ~Person() {}
 
-    virtual void save(ofstream& outFile) const;
-    virtual void load(ifstream& inFile);
 
-    string getFirstName() const;
-    string getLastName() const;
-    bool checkPassword(const string& pass) const;
+    virtual void bindToStatement(sqlite3_stmt* stmt, int& index) const = 0;
+    virtual void loadFromStatement(sqlite3_stmt* stmt) = 0;
+
+
+    bool operator==(const Person& other) const {
+        return firstName == other.firstName && lastName == other.lastName;
+    }
+    bool operator!=(const Person& other) const { return !(*this == other); }
+
+    bool operator<(const Person& other) const {
+        return lastName < other.lastName || (lastName == other.lastName && firstName < other.firstName);
+    }
+
+
+    friend std::ostream& operator<<(std::ostream& os, const Person& person);
+
+
+    std::string getFirstName() const;
+    std::string getLastName() const;
+    bool checkPassword(const std::string& pass) const;
+
 };
+
+std::ostream& operator<<(std::ostream& os, const Person& p);
+
+
 
 #endif // PERSON_H

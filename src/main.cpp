@@ -3,173 +3,258 @@
 #include "headers/Person.h"
 #include "headers/User.h"
 #include "headers/Specialist.h"
+
 #include <iostream>
 #include <limits>
 #include <algorithm>
 #include <vector>
-#include <fstream>
+#include <sqlite3.h>
+#include <string>
+#include <windows.h>
+#include <sstream>
 
-using namespace std;
+sqlite3 *db;
 
-void save(const vector<Person*>& people) {
-    ofstream file("people.bin", ios::binary | ios::trunc);
-    if (!file.is_open()) {
-        cout << "Error: Could not open people.bin for writing." << endl;
-        return;
+void initializeDatabase()
+{
+    int rc = sqlite3_open("people.db", &db);
+    if (rc)
+    {
+        std::cerr << "Error of database opining: " << sqlite3_errmsg(db) << std::endl;
+        exit(1);
     }
-    for (const Person* person : people) {
-        int userType = 0;
-        if (dynamic_cast<const User*>(person)) {
-            userType = 1;
-        } else if (dynamic_cast<const Specialist*>(person)) {
-            userType = 2;
-        } else if (dynamic_cast<const Admin*>(person)) {
-            userType = 3;
-        }
 
-        file.write(reinterpret_cast<const char*>(&userType), sizeof(userType));
-        person->save(file);
+    std::string sql;
+    sql = "create table if not exists people ("
+          "id integer primary key autoincrement,"
+          "type TEXT,"
+          "firstName TEXT,"
+          "lastName TEXT,"
+          "password TEXT,"
+          "country TEXT,"
+          "region TEXT,"
+          "city TEXT,"
+          "street TEXT,"
+          "house TEXT,"
+          "apartment TEXT,"
+          "contactInfo TEXT,"
+          "specialization TEXT,"
+          "certifications TEXT,"
+          "privileges TEXT,"
+          "ratings TEXT,"
+          "reviews TEXT"
+          ");";
+
+    char *errmsg;
+    rc = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &errmsg);
+    if (rc != SQLITE_OK)
+    {
+        std::cerr << "SQL error: " << errmsg << std::endl;
+        sqlite3_free(errmsg);
+        exit(1);
     }
-    file.close();
 }
 
-void load(vector<Person*>& people) {
-    ifstream file("people.bin", ios::binary);
-    if (!file.is_open()) {
-        cout << "people.bin not found. Would you like to create a new file? (yes/no): ";
-        string response;
-        getline(cin, response);
-        if (response == "yes") {
-            save(people);
-            cout << "New file created." << endl;
-        }
-        return;
+void saveToDatabase(const std::vector<Person *> &people)
+{
+    sqlite3_exec(db, "DELETE FROM people;", nullptr, nullptr, nullptr);
+
+    std::string sql = "INSERT INTO people (type, firstName, lastName, password, country, region, city, street, house, apartment, contactInfo, specialization, certifications, privileges, ratings, reviews) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+    sqlite3_stmt *stmt;
+    int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+     if (rc != SQLITE_OK) {
+        std::cerr << "SQL error: " << sqlite3_errmsg(db) << std::endl;
+        exit(1);
     }
 
-    while (true) {
-        int userType;
-        if (!file.read(reinterpret_cast<char*>(&userType), sizeof(userType))) {
-            if (file.eof()) break;
-            cout << "Error: Failed to read userType." << endl;
-            break;
+    for (const Person *person : people)
+    {
+        std::string type;
+        if (dynamic_cast<const User *>(person))
+        {
+            type = "User";
+        }
+        else if (dynamic_cast<const Specialist *>(person))
+        {
+            type = "Specialist";
+        }
+        else if (dynamic_cast<const Admin *>(person))
+        {
+            type = "Admin";
         }
 
-        Person* person = nullptr;
-        switch (userType) {
-            case 1:
-                person = new (nothrow) User();
-                break;
-            case 2:
-                person = new (nothrow) Specialist();
-                break;
-            case 3:
-                person = new (nothrow) Admin();
-                break;
-            default:
-                cout << "Error: Invalid userType." << endl;
-                continue;
+        int index = 1;
+        sqlite3_bind_text(stmt, index++, type.c_str(), -1, SQLITE_TRANSIENT);
+
+        person->bindToStatement(stmt, index);
+        rc = sqlite3_step(stmt);
+
+        if (rc != SQLITE_DONE)
+        {
+            std::cerr << "SQL error (insert): " << sqlite3_errmsg(db) << std::endl;
+
+            sqlite3_finalize(stmt);
+            exit(1); // Or handle the error appropriately
         }
 
-        if (person == nullptr) {
-            cout << "Memory allocation error: Failed to allocate memory for person object." << endl;
-            break;
+        rc = sqlite3_reset(stmt); // Reset the statement for the next iteration
+        if (rc != SQLITE_OK) {
+            fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
+        }
+    }
+
+    sqlite3_finalize(stmt);
+}
+
+void loadFromDatabase(std::vector<Person *> &people)
+{
+    for (Person *person : people)
+    {
+        delete person;
+    }
+    people.clear();
+
+    std::string sql = "select * from people;";
+    sqlite3_stmt *stmt;
+    int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+
+     if (rc != SQLITE_OK) {
+        std::cerr << "SQL error: " << sqlite3_errmsg(db) << std::endl;
+        exit(1);
+    }
+
+    while (sqlite3_step(stmt) == SQLITE_ROW)
+    {
+        std::string type = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1));
+
+        Person *person = nullptr;
+        if (type == "User")
+        {
+            person = new User();
+        }
+        else if (type == "Specialist")
+        {
+            person = new Specialist();
+        }
+        else if (type == "Admin")
+        {
+            person = new Admin();
         }
 
-        try {
-            person->load(file);
+        if (person)
+        {
+            person->loadFromStatement(stmt);
             people.push_back(person);
-        } catch (const std::bad_alloc& e) {
-           // cout << "Memory allocation error: " << e.what() << endl;
-           // delete person;
-            break;
-        } catch (const std::exception& e) {
-            cout << "Error loading person data: " << e.what() << endl;
-            delete person;
-            break;
         }
     }
 
-    file.close();
+    sqlite3_finalize(stmt);
 }
 
-void deleteAccountByName(vector<Person*>& people) {
-    string firstName, lastName;
-    cout << "Enter first name: ";
-    getline(cin, firstName);
-    cout << "Enter last name: ";
-    getline(cin, lastName);
+void deleteAccountByName(std::vector<Person *> &people)
+{
+    std::string firstName, lastName;
+    std::cout << "Please input your first name: ";
+    getline(std::cin, firstName);
+    std::cout << "Please input your second name: ";
+    getline(std::cin, lastName);
 
-    auto it = find_if(people.begin(), people.end(), [&](const Person* person) {
+    auto it = find_if(people.begin(), people.end(), [&](const Person *person) {
         return person->getFirstName() == firstName && person->getLastName() == lastName;
     });
 
-    if (it != people.end()) {
+    if (it != people.end())
+    {
         delete *it;
         people.erase(it);
-        cout << "Account deleted successfully." << endl;
-    } else {
-        cout << "Person not found." << endl;
+       std::cout << "Account is successfully deleted." << std::endl;
+    }
+    else
+    {
+        std::cout << "User is not found." << std::endl;
     }
 }
 
 int main() {
-    vector<Person*> people;
-    load(people);
+    std::vector<Person*> people;
+
+    initializeDatabase();
+    loadFromDatabase(people);
+
     int choice;
 
     do {
-        cout << "Main Menu:" << endl;
-        cout << "1. Create new user" << endl;
-        cout << "2. Display all people" << endl;
-        cout << "3. View profile information by name" << endl;
-        cout << "4. Log in" << endl;
-        cout << "0. Exit" << endl;
-        cout << "Enter your choice: ";
-        cin >> choice;
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        std::cout << "\nMain menu:" << std::endl;
+        std::cout << "1.Add new client" << std::endl;
+        std::cout << "2.Display all clients" << std::endl;
+        std::cout << "3.Find info by client's name" << std::endl;
+        std::cout << "4.Log in" << std::endl;
+        std::cout << "0.Exit" << std::endl;
+        std::cout << "Enter your choice: ";
+
+        while (!(std::cin >> choice)) {
+            std::cout << "Incorrect input. Please enter the number: ";
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        }
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
         switch (choice) {
             case 1: {
                 int userType;
-                cout << "Select user type: 1. User, 2. Specialist, 3. Admin: ";
-                cin >> userType;
-                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                std::cout << "Please choose the type of client (1 - user, 2 - specialist, 3 - admin): ";
+                while (!(std::cin >> userType)) {
+                    std::cout << "Incorrect input. Please enter the number: ";
+                    std::cin.clear();
+                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                }
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
                 Person* person = nullptr;
                 if (userType == 1) {
-                    person = new (nothrow) User();
+                    person = new User();  // Создаем User
                 } else if (userType == 2) {
-                    person = new (nothrow) Specialist();
+                    person = new Specialist();  // Создаем Specialist
                 } else if (userType == 3) {
-                    person = new (nothrow) Admin();
+                    person = new Admin();  // Создаем Admin
                 } else {
-                    cout << "Invalid user type selected." << endl;
+                    std::cout << "Incorrect client type." << std::endl;
                     break;
                 }
 
                 if (person == nullptr) {
-                    cout << "Error: Memory allocation failed while creating new user." << endl;
+                    std::cout << "Memory error." << std::endl;
                     break;
                 }
 
                 person->input();
                 people.push_back(person);
-                cout << "User created successfully." << endl;
+                saveToDatabase(people);
+                std::cout << "Client successfully added." << std::endl;
                 break;
             }
+
             case 2: {
-                for (const Person* person : people) {
-                    person->display();
-                    cout << "--------------------------" << endl;
+                loadFromDatabase(people); // Reload data before displaying
+                 if(people.empty()) {
+                    std::cout << "Clients list is empty.\n";
+                } else {
+                    for (const Person* person : people) {
+                         person->display();
+                         std::cout << "--------------------------" << std::endl;
+                     }
                 }
                 break;
             }
+
             case 3: {
-                string firstName, lastName;
-                cout << "Enter first name: ";
-                getline(cin, firstName);
-                cout << "Enter last name: ";
-                getline(cin, lastName);
+                std::string firstName, lastName;
+                std::cout << "Please input first name: ";
+                std::getline(std::cin, firstName);
+                std::cout << "Please input last name: ";
+                getline(std::cin, lastName);
+
+                loadFromDatabase(people); // Reload data before searching
 
                 auto it = find_if(people.begin(), people.end(), [&](const Person* person) {
                     return person->getFirstName() == firstName && person->getLastName() == lastName;
@@ -178,102 +263,224 @@ int main() {
                 if (it != people.end()) {
                     (*it)->display();
                 } else {
-                    cout << "Person not found." << endl;
+                    std::cout << "Client isn't found." << std::endl;
                 }
                 break;
             }
+
             case 4: {
-                string firstName, lastName, password;
-                cout << "Enter first name: ";
-                getline(cin, firstName);
-                cout << "Enter last name: ";
-                getline(cin, lastName);
-                cout << "Enter password: ";
-                getline(cin, password);
+                std::string firstName, lastName, password;
+                std::cout << "Please input first name: ";
+                getline(std::cin, firstName);
+                std::cout << "Please input last name: ";
+                getline(std::cin, lastName);
+                std::cout << "Please input password: ";
+                getline(std::cin, password);
+
+                loadFromDatabase(people); // Reload data before login
 
                 auto it = find_if(people.begin(), people.end(), [&](const Person* person) {
                     return person->getFirstName() == firstName && person->getLastName() == lastName && person->checkPassword(password);
                 });
 
                 if (it != people.end()) {
-                    cout << "Login successful." << endl;
+                    std::cout << "Log in successed." << std::endl;
 
                     int loginChoice;
                     do {
-                        cout << "1. View Profile" << endl;
-                        cout << "2. Delete Account" << endl;
-                        cout << "3. Edit Profile" << endl;
+                        std::cout << "1.See profile"<< std::endl;
+                        std::cout << "2.Delete account" << std::endl;
+                        std::cout << "3.Edit profile" << std::endl;
 
                         User* user = dynamic_cast<User*>(*it);
                         Specialist* specialist = dynamic_cast<Specialist*>(*it);
                         Admin* admin = dynamic_cast<Admin*>(*it);
 
                         if (user) {
-                            cout << "4. Rate and review a Specialist" << endl;
+                            std::cout << "4.Rate and give review of specialist" << std::endl;
                         } else if (specialist) {
-                            cout << "4. Rate and review a User" << endl;
+                            std::cout << "4.Rate and give review of user" << std::endl;
                         } else if (admin) {
-                            cout << "4. Delete User by name" << endl;
+                            std::cout << "4.Delete user by name and second name"<<std::endl;
                         }
 
-                        cout << "0. Logout" << endl;
-                        cout << "Enter your choice: ";
-                        cin >> loginChoice;
-                        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                        std::cout << "0.Exit to the main menu" << std::endl;
+                        std::cout << "Enter your choice: ";
+
+                        while (!(std::cin >> loginChoice)) {
+                            std::cout << "Incorrect input. Please enter the number: ";
+                            std::cin.clear();
+                            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                        }
+
+                        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
                         switch (loginChoice) {
                             case 1:
                                 (*it)->display();
                                 break;
                             case 2: {
-                                string confirmPassword;
-                                cout << "Are you sure you want to delete the account? (yes/no): ";
-                                getline(cin, confirmPassword);
+                                std::string confirmPassword;
+                                std::cout << "Do you confirm the deletion of account? (yes/no): ";
+                                getline(std::cin, confirmPassword);
                                 if (confirmPassword == "yes") {
-                                    cout << "Enter password to confirm: ";
-                                    getline(cin, confirmPassword);
+                                    std::cout << "Please input the password t0 confirm: ";
+                                    getline(std::cin, confirmPassword);
+
                                     if ((*it)->checkPassword(confirmPassword)) {
                                         delete *it;
                                         people.erase(it);
-                                        cout << "Account deleted successfully." << endl;
+                                        saveToDatabase(people);
+                                        std::cout << "Account is deleted successfully." << std::endl;
                                         loginChoice = 0;
                                     } else {
-                                        cout << "Incorrect password." << endl;
+                                        std::cout << "Invalid password." << std::endl;
                                     }
                                 }
                                 break;
                             }
                             case 3:
                                 (*it)->input();
+                                saveToDatabase(people);
+                                std::cout << "Profile is changed successfully." << std::endl;
                                 break;
-                            case 4:
-                                deleteAccountByName(people);
+                            case 4: {
+                                if (user) {
+                                    std::string specialistFirstName, specialistLastName;
+                                    std::cout << "Please input the first name of the specialist you wanna rate: ";
+                                    getline(std::cin, specialistFirstName);
+                                    std::cout << "Please input the second name of the specialist you wanna rate: ";
+                                    getline(std::cin, specialistLastName);
+
+                                    auto specialistIt = find_if(people.begin(), people.end(), [&](const Person* p) {
+                                        return p->getFirstName() == specialistFirstName && p->getLastName() == specialistLastName;
+                                    });
+
+                                    if (specialistIt != people.end()) {
+                                        Specialist* specialist = dynamic_cast<Specialist*>(*specialistIt);
+                                        if (specialist) {
+                                            int rating;
+                                            std::cout << "Input raiting (1-5): ";
+
+                                            while (!(std::cin >> rating) || rating < 1 || rating > 5) {
+                                                std::cout << "Incorrect input, please enter a number from 1 to 5: ";
+                                                std::cin.clear();
+                                                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                                            }
+
+                                            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                                            std::string review;
+                                            std::cout << "Please get your review: ";
+                                            std::getline(std::cin, review);
+
+                                            specialist->addRating(rating);
+                                            specialist->addReview(review);
+                                            saveToDatabase(people);
+
+                                            std::cout << "Raiting and review were added successfully." << std::endl;
+                                        } else {
+                                            std::cout << "This guy isn't specialist." << std::endl;
+                                        }
+                                    } else {
+                                        std::cout << "Specialist isn't found." << std::endl;
+                                    }
+                                } else if (specialist) {
+                                    std::string userFirstName, userLastName;
+                                    std::cout << "Please input the first name of the user you wanna rate: "; // Изменено: просим имя и фамилию пользователя
+                                    getline(std::cin, userFirstName);
+                                    std::cout << "Please input the second name of the user you wanna rate: "; // Изменено: просим имя и фамилию пользователя
+                                    getline(std::cin, userLastName);
+
+                                    auto userIt = find_if(people.begin(), people.end(), [&](const Person* p) {
+                                        return p->getFirstName() == userFirstName && p->getLastName() == userLastName;
+                                    });
+
+                                    if (userIt != people.end()) {
+                                        User* user = dynamic_cast<User*>(*userIt);
+                                        if (user) {
+                                            int rating;
+                                            std::cout << "Input raiting (1-5): ";
+
+                                            while (!(std::cin >> rating) || rating < 1 || rating > 5) {
+                                                std::cout << "Incorrect input, please enter a number from 1 to 5: ";
+                                                std::cin.clear();
+                                                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                                            }
+
+                                            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                                            std::string review;
+                                            std::cout << "Please get your review: ";
+                                            std::getline(std::cin, review);
+
+                                            user->addRating(rating);
+                                            user->addReview(review);
+                                            saveToDatabase(people);
+
+                                            std::cout << "Raiting and review were added successfully." << std::endl;
+                                        } else {
+                                            std::cout << "This guy isn't user." << std::endl;
+                                        }
+                                    } else {
+                                        std::cout << "User isn't found." << std::endl;
+                                    }
+
+                                } else if (admin) {
+                                    std::string personFirstName, personLastName;
+                                    std::cout << "Please enter the first name of the client you wanna delete: ";
+                                    getline(std::cin, personFirstName);
+                                    std::cout << "Please enter the second name of the client you wanna delete: ";
+                                    getline(std::cin, personLastName);
+
+                                    auto personIt = find_if(people.begin(), people.end(), [&](const Person* p) {
+                                        return p->getFirstName() == personFirstName && p->getLastName() == personLastName;
+                                    });
+
+                                    if (personIt != people.end()) {
+                                        delete *personIt;
+                                        people.erase(personIt);
+                                        saveToDatabase(people);
+                                        std::cout << "Client is deleted successfully." << std::endl;
+
+                                    } else {
+                                        std::cout << "Client isn't found." << std::endl;
+                                    }
+                                }
                                 break;
+                            }
+
                             case 0:
-                                cout << "Logged out." << endl;
+                                std::cout << "Exit to the main meny." << std::endl;
                                 break;
                             default:
-                                cout << "Invalid choice. Try again." << endl;
+                                std::cout << "Incorrect choice, please try again." << std::endl;
                         }
+
                     } while (loginChoice != 0);
-                } else {
-                    cout << "Invalid login credentials." << endl;
                 }
+                else
+                {
+                    std::cout << "Invalid credentails for log in." << std::endl;
+                }
+
                 break;
             }
-            case 0:
-                cout << "Exiting program." << endl;
+            case 0: {
+                std::cout << "Exit." << std::endl;
                 break;
-            default:
-                cout << "Invalid choice. Try again." << endl;
+            }
+            default: {
+                std::cout << "Incorrect choice, please try again." << std::endl;
+            }
+
         }
     } while (choice != 0);
 
-    save(people);
-
-    for (Person* person : people) {
-        delete person;
+    for (Person *p : people)
+    {
+        delete p;
     }
     people.clear();
+
+    sqlite3_close(db);
     return 0;
 }

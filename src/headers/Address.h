@@ -1,24 +1,22 @@
 #ifndef ADDRESS_H
 #define ADDRESS_H
 
-#include <iostream>
 #include <string>
-#include <fstream>
+#include <sqlite3.h>
 
-using namespace std;
-
-struct Address {
-    string country;
-    string region;
-    string city;
-    string street;
-    string house;
-    string apartment;
+class Address {
+public:
+    std::string country;
+    std::string region;
+    std::string city;
+    std::string street;
+    std::string house;
+    std::string apartment;
 
     void input();
     void display() const;
-    void save(ofstream& outFile) const;
-    void load(ifstream& inFile);
+    void bindToStatement(sqlite3_stmt* stmt, int& index) const;
+    void loadFromStatement(sqlite3_stmt* stmt);
 };
 
 #endif // ADDRESS_H
