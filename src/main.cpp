@@ -50,46 +50,57 @@ void initializeDatabase()
     }
 }
 void saveToDatabase(const std::vector<Person *> &people)
-{
-    sqlite3_exec(db, "DELETE FROM people;", nullptr, nullptr, nullptr);
+{sqlite3_exec(db, "DELETE FROM people;", nullptr, nullptr, nullptr);
+
     std::string sql = "INSERT INTO people (type, firstName, lastName, password, country, region, city, street, house, apartment, contactInfo, specialization, certifications, privileges, ratings, reviews) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+
     sqlite3_stmt *stmt;
     int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
-     if (rc != SQLITE_OK) {
-        std::cerr << "SQL error: " << sqlite3_errmsg(db) << std::endl;
+    if (rc != SQLITE_OK) {
+        std::cerr << "SQL error (prepare): " << sqlite3_errmsg(db) << std::endl;
         exit(1);
     }
-    for (const Person *person : people)
-    {
+
+    for (const Person *person : people) {
+        if (person == nullptr) {
+            std::cerr << "Error: Null pointer to person object." << std::endl;
+            continue;
+        }
+
         std::string type;
-        if (dynamic_cast<const User *>(person))
-        {
+        if (dynamic_cast<const User *>(person)) {
             type = "User";
-        }
-        else if (dynamic_cast<const Specialist *>(person))
-        {
+        } else if (dynamic_cast<const Specialist *>(person)) {
             type = "Specialist";
-        }
-        else if (dynamic_cast<const Admin *>(person))
-        {
+        } else if (dynamic_cast<const Admin *>(person)) {
             type = "Admin";
+        } else {
+            std::cerr << "Unknown person type." << std::endl;
+            continue;
         }
+
         int index = 1;
         sqlite3_bind_text(stmt, index++, type.c_str(), -1, SQLITE_TRANSIENT);
+
         person->bindToStatement(stmt, index);
+
         rc = sqlite3_step(stmt);
-        if (rc != SQLITE_DONE)
-        {
+        if (rc != SQLITE_DONE) {
             std::cerr << "SQL error (insert): " << sqlite3_errmsg(db) << std::endl;
             sqlite3_finalize(stmt);
-            exit(1); 
+            exit(1);
         }
-        rc = sqlite3_reset(stmt); 
+
+        rc = sqlite3_reset(stmt);
         if (rc != SQLITE_OK) {
-            fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
+            std::cerr << "SQL error (reset): " << sqlite3_errmsg(db) << std::endl;
+            sqlite3_finalize(stmt);
+            exit(1);
         }
     }
+
     sqlite3_finalize(stmt);
+
 }
 void loadFromDatabase(std::vector<Person *> &people)
 {
