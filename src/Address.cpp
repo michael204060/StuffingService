@@ -1,5 +1,13 @@
+
 #include "headers/Address.h"
 #include <iostream>
+
+Address::Address() : country(""), region(""), city(""), street(""), house(""), apartment("") {}
+
+Address::Address(const std::string& country, const std::string& region, const std::string& city,
+    const std::string& street, const std::string& house, const std::string& apartment)
+    : country(country), region(region), city(city),
+    street(street), house(house), apartment(apartment) {}
 
 void Address::input() {
     std::cout << "Enter country: ";
@@ -15,6 +23,7 @@ void Address::input() {
     std::cout << "Enter apartment: ";
     std::getline(std::cin, apartment);
 }
+
 
 void Address::display() const {
     std::cout << "Address: " << country << ", " << region << ", " << city;
@@ -32,37 +41,29 @@ void Address::bindToStatement(sqlite3_stmt* stmt, int& index) const {
     sqlite3_bind_text(stmt, index++, house.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, index++, apartment.c_str(), -1, SQLITE_TRANSIENT);
 }
+
 void Address::loadFromStatement(sqlite3_stmt* stmt) {
-    const char *countryValue = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
-    if (countryValue != nullptr) {
-        country = countryValue;
-    }
-
-    const char *regionValue = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
-    if (regionValue != nullptr) {
-        region = regionValue;
-    }
-
-    const char *cityValue = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7));
-    if (cityValue != nullptr) {
-        city = cityValue;
-    }
-
-    const char *streetValue = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 8));
-    if (streetValue != nullptr) {
-        street = streetValue;
-    }
-
-    const char *houseValue = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 9));
-    if (houseValue != nullptr) {
-        house = houseValue;
-    }
-
-    const char *apartmentValue = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 10))   ;
-    if (apartmentValue != nullptr) {
-        apartment = apartmentValue;
-    }
+    int index = 5; 
+    country = reinterpret_cast<const char*>(sqlite3_column_text(stmt, index++));
+    region = reinterpret_cast<const char*>(sqlite3_column_text(stmt, index++));
+    city = reinterpret_cast<const char*>(sqlite3_column_text(stmt, index++));
+    street = reinterpret_cast<const char*>(sqlite3_column_text(stmt, index++));
+    house = reinterpret_cast<const char*>(sqlite3_column_text(stmt, index++));
+    apartment = reinterpret_cast<const char*>(sqlite3_column_text(stmt, index));
 }
 
 
+std::string Address::getCountry() const { return country; }
+std::string Address::getRegion() const { return region; }
+std::string Address::getCity() const { return city; }
+std::string Address::getStreet() const { return street; }
+std::string Address::getHouse() const { return house; }
+std::string Address::getApartment() const { return apartment; }
 
+
+void Address::setCountry(const std::string& country) { this->country = country; }
+void Address::setRegion(const std::string& region) { this->region = region; }
+void Address::setCity(const std::string& city) { this->city = city; }
+void Address::setStreet(const std::string& street) { this->street = street; }
+void Address::setHouse(const std::string& house) { this->house = house; }
+void Address::setApartment(const std::string& apartment) { this->apartment = apartment; }
