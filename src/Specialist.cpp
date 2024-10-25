@@ -1,7 +1,16 @@
+
 #include "headers/Specialist.h"
 #include <iostream>
 #include <sstream>
 #include <limits>
+
+Specialist::Specialist(const std::string& firstName, const std::string& lastName, 
+                     const std::string& password, const Address& address,
+                     const std::string& contactInfo, const std::string& specialization,
+                     const std::vector<std::string>& certifications)
+    : User(firstName, lastName, password, address, contactInfo), 
+      specialization(specialization), certifications(certifications) {}
+
 void Specialist::input() {
     User::input();
     std::cout << "Enter specialization: ";
@@ -16,6 +25,7 @@ void Specialist::input() {
         std::getline(std::cin, certifications[i]);
     }
 }
+
 void Specialist::display() const {
     User::display();
     std::cout << "Specialization: " << specialization << std::endl;
@@ -25,16 +35,12 @@ void Specialist::display() const {
         std::cout << std::endl;
     }
 }
+
 void Specialist::addCertification(const std::string& certification) {
     certifications.push_back(certification);
 }
-void Specialist::addRating(int rating) {
-    User::addRating(rating);
-}
-void Specialist::addReview(const std::string& review) {
-    User::addReview(review);
-}
-void Specialist::bindToStatement(sqlite3_stmt* stmt, int &index) const {
+
+void Specialist::bindToStatement(sqlite3_stmt* stmt, int& index) const {
     User::bindToStatement(stmt, index);
     sqlite3_bind_text(stmt, index++, specialization.c_str(), -1, SQLITE_TRANSIENT);
     std::string certificationsStr;
@@ -46,20 +52,26 @@ void Specialist::bindToStatement(sqlite3_stmt* stmt, int &index) const {
     }
     sqlite3_bind_text(stmt, index++, certificationsStr.c_str(), -1, SQLITE_TRANSIENT);
 }
+
 void Specialist::loadFromStatement(sqlite3_stmt* stmt) {
     User::loadFromStatement(stmt);
-    const char *specializationValue = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 12));
-    if (specializationValue != nullptr) {
-        specialization = specializationValue;
-    }
-    const char *certificationsValue = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 13));
-    if (certificationsValue != nullptr) {
-        std::string certificationsStr(certificationsValue);
-        certifications.clear();
-        std::stringstream ss(certificationsStr);
-        std::string cert;
-        while (std::getline(ss, cert, ',')) {
-            if (!cert.empty()) certifications.push_back(cert);
-        }
+    int index = 12; 
+
+    const char* tempSpecialization = reinterpret_cast<const char*>(sqlite3_column_text(stmt, index++));
+    specialization = (tempSpecialization != nullptr) ? tempSpecialization : "";
+
+    const char* tempCertificationsStr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, index));
+    std::string certificationsStr = (tempCertificationsStr != nullptr) ? tempCertificationsStr : "";
+
+    certifications.clear();
+    std::stringstream ss(certificationsStr);
+    std::string cert;
+    while (std::getline(ss, cert, ',')) {
+        if (!cert.empty()) certifications.push_back(cert);
     }
 }
+
+
+std::string Specialist::getSpecialization() const { return specialization; }
+const std::vector<std::string>& Specialist::getCertifications() const { return certifications; }
+void Specialist::setSpecialization(const std::string& specialization) { this->specialization = specialization; }
