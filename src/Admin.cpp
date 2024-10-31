@@ -1,5 +1,5 @@
 
-#include "headers/Admin.h"
+#include "../headers/Admin.h"
 #include <iostream>
 #include <algorithm>
 #include <sstream>
@@ -30,13 +30,7 @@ void Admin::display() const {
     std::cout << std::endl;
 }
 
-void Admin::addPrivilege(const std::string& privilege) { 
-    privileges.push_back(privilege); 
-}
 
-void Admin::removePrivilege(const std::string& privilege) { 
-    privileges.erase(std::remove(privileges.begin(), privileges.end(), privilege), privileges.end()); 
-}
 
 void Admin::bindToStatement(sqlite3_stmt* stmt, int& index) const {
     Person::bindToStatement(stmt, index);
@@ -52,7 +46,7 @@ void Admin::bindToStatement(sqlite3_stmt* stmt, int& index) const {
 
 void Admin::loadFromStatement(sqlite3_stmt* stmt) {
     Person::loadFromStatement(stmt);
-    int index = 14; 
+    int index = 14;  
 
     const char* tempPrivilegesStr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, index));
     std::string privilegesStr = (tempPrivilegesStr != nullptr) ? tempPrivilegesStr : "";
@@ -67,3 +61,15 @@ void Admin::loadFromStatement(sqlite3_stmt* stmt) {
 
 
 const std::vector<std::string>& Admin::getPrivileges() const { return privileges; }
+
+
+template <typename T>
+void Admin::addPrivilege(const T& privilege) {
+    privileges.push_back(std::to_string(privilege)); 
+}
+
+template <typename T>
+void Admin::removePrivilege(const T& privilege) {
+    std::string strPrivilege = std::to_string(privilege);
+    privileges.erase(std::remove(privileges.begin(), privileges.end(), strPrivilege), privileges.end());
+}

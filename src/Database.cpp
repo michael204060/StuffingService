@@ -1,11 +1,11 @@
 
-#include "headers/Database.h"
+#include "../headers/Database.h"
 #include <iostream>
 #include <string>
-#include "headers/Address.h"
-#include "headers/User.h"
-#include "headers/Admin.h"
-#include "headers/Specialist.h"
+#include "../headers/Address.h"
+#include "../headers/User.h"
+#include "../headers/Admin.h"
+#include "../headers/Specialist.h"
 
 Database::Database() : db(nullptr) {}
 

@@ -2,8 +2,8 @@
 #ifndef USER_H
 #define USER_H
 
-#include "headers/Person.h"
-#include "headers/Address.h"
+#include "../headers/Person.h"
+#include "../headers/Address.h"
 #include <vector>
 #include <string>
 #include <iostream>

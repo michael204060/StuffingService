@@ -1,9 +1,9 @@
-#include "MainWindow.h"
-#include "headers/Address.h"
-#include "headers/User.h"
-#include "headers/Admin.h"
-#include "headers/Specialist.h"
-#include "headers/Database.h"
+#include "../headers/MainWindow.h"
+#include "../headers/Address.h"
+#include "../headers/User.h"
+#include "../headers/Admin.h"
+#include "../headers/Specialist.h"
+#include "../headers/Database.h"
 #include <QMessageBox>
 #include <QInputDialog>
 #include <sstream>
@@ -11,9 +11,9 @@
 
 MainWindow::MainWindow(Database& database, QWidget* parent) : QWidget(parent), db(database) {
     loadFromDatabase();
-
-    setWindowTitle("AwesomeProjectPlus");
+    setWindowTitle("Stuffing Service");
     setStyleSheet("background-color: darkblue; color: pink;");
+
 
     outputLabel = new QLabel("Welcome to AwesomeProjectPlus!", this);
     outputLabel->setWordWrap(true);

@@ -1,5 +1,5 @@
 
-#include "headers/Specialist.h"
+#include "../headers/Specialist.h"
 #include <iostream>
 #include <sstream>
 #include <limits>

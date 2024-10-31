@@ -1,5 +1,5 @@
 
-#include "headers/Person.h"
+#include "../headers/Person.h"
 #include <iostream>
 
 Person::Person(const std::string& firstName, const std::string& lastName, const std::string& password)

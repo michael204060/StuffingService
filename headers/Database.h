@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <sqlite3.h>
-#include "headers/Person.h"
+#include "../headers/Person.h"
 
 class Database {
 private:

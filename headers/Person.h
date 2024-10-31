@@ -5,7 +5,7 @@
 #include <string>
 #include <iostream>
 #include <sqlite3.h>
-#include "headers/Address.h"
+#include "../headers/Address.h"
 
 class Person {
 private:

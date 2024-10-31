@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.29)
-project(AwesomeProjectPlus)
+project(StuffingService)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_AUTOMOC ON)
@@ -13,9 +13,10 @@ find_package(Qt6 COMPONENTS Core Gui Widgets REQUIRED)
 set(SQLITE3_INCLUDE_DIR "C:/sqlite3")
 set(SQLITE3_LIBRARIES "C:/sqlite3/sqlite3.dll")
 
+
 include_directories(${SQLITE3_INCLUDE_DIR})
 
-add_executable(AwesomeProjectPlus
+add_executable(StuffingService
         main.cpp
         Address.cpp
         Person.cpp
@@ -24,10 +25,16 @@ add_executable(AwesomeProjectPlus
         User.cpp
         Database.cpp
         MainWindow.cpp
-        MainWindow.h
+        ../headers/Address.h
+        ../headers/Admin.h
+        ../headers/Database.h
+        ../headers/Person.h
+        ../headers/Specialist.h
+        ../headers/User.h
+        ../headers/MainWindow.h
 )
 
-target_link_libraries(AwesomeProjectPlus
+target_link_libraries(StuffingService
         PRIVATE Qt6::Core
         PRIVATE Qt6::Gui
         PRIVATE Qt6::Widgets

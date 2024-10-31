@@ -2,7 +2,7 @@
 #ifndef SPECIALIST_H
 #define SPECIALIST_H
 
-#include "headers/User.h"
+#include "../headers/User.h"
 #include <vector>
 #include <string>
 
