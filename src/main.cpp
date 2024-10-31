@@ -1,7 +1,7 @@
 
 #include <QApplication>
 #include <QWidget>
-#include "MainWindow.h"
+#include "../headers/MainWindow.h"
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
     Database db;
