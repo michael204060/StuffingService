@@ -16,6 +16,8 @@
 #include <vector>
 #include <QString>
 #include <functional>
+#include <QPixmap>  // Добавляем для QPixmap
+#include <QPainter> // Добавляем для QPainter
 #include "../headers/Person.h"
 #include "../headers/Database.h"
 #include "../headers/Admin.h"
@@ -51,6 +53,9 @@ private:
     QVBoxLayout* mainLayout;
     std::vector<Person*> people;
 
+    // Добавляем переменную для хранения фонового изображения
+    QPixmap backgroundImage; // Или QImage, если вы предпочитаете
+
     void mainMenu();
     void createMainMenuButtons();
     void clearLayout(QLayout* layout);
@@ -60,6 +65,10 @@ private:
     QLineEdit* createLineEdit(const QString& placeholder = "");
     QPushButton* createButton(const QString& text, std::function<void()> callback);
     void createPersonInputForm(const QString& type);
+
+protected:
+    // Переопределяем метод для рисования
+    void paintEvent(QPaintEvent* event) override;
 };
 
-#endif
+#endif // AWESOME_PROJECT_PLUS_WINDOW_H

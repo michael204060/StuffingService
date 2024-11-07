@@ -8,15 +8,19 @@
 #include <QInputDialog>
 #include <sstream>
 #include <functional>
+#include <QPainter>
 
 MainWindow::MainWindow(Database& database, QWidget* parent) : QWidget(parent), db(database) {
     loadFromDatabase();
     setWindowTitle("Stuffing Service");
-    setStyleSheet("background-color: darkblue; color: pink;");
 
+    // Указываем путь к изображению
+    QString imagePath = "C:/Users/micha/CLionProjects/StuffingService/resources/1111.png"; // Замените на фактический путь
+    backgroundImage.load(imagePath); // Загружаем изображение
 
-    outputLabel = new QLabel("Welcome to AwesomeProjectPlus!", this);
+    outputLabel = new QLabel("Welcome to Stuffing service!", this);
     outputLabel->setWordWrap(true);
+    outputLabel->setStyleSheet("color: red;");
 
     mainLayout = new QVBoxLayout(this);
     mainLayout->addWidget(outputLabel);
@@ -26,6 +30,11 @@ MainWindow::MainWindow(Database& database, QWidget* parent) : QWidget(parent), d
     setLayout(mainLayout);
 }
 
+void MainWindow::paintEvent(QPaintEvent* event) {
+    QPainter painter(this);
+    // Рисуем изображение на весь размер виджета
+    painter.drawPixmap(rect(), backgroundImage.scaled(size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
+}
 MainWindow::~MainWindow() {
     saveToDatabase();
     for (Person* p : people) {
