@@ -35,6 +35,7 @@ void MainWindow::paintEvent(QPaintEvent* event) {
     // Рисуем изображение на весь размер виджета
     painter.drawPixmap(rect(), backgroundImage.scaled(size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
 }
+
 MainWindow::~MainWindow() {
     saveToDatabase();
     for (Person* p : people) {
@@ -117,7 +118,7 @@ void MainWindow::createPersonInputForm(const QString& type) {
     QLineEdit* apartmentEdit = createLineEdit("Apartment");
     QLineEdit* contactEdit = createLineEdit("Contact Info");
 
-    
+
     QLineEdit* specializationEdit = nullptr;
     QLineEdit* certificationsEdit = nullptr;
     if (type == "Specialist") {
@@ -151,7 +152,7 @@ void MainWindow::createPersonInputForm(const QString& type) {
             person = new User(firstNameEdit->text().toStdString(), lastNameEdit->text().toStdString(),
                               passwordEdit->text().toStdString(), address, contactEdit->text().toStdString());
         } else if (type == "Specialist") {
-            
+
             QStringList certificationsList = certificationsEdit->text().split(",");
             std::vector<std::string> certifications;
             for (const QString& cert : certificationsList) {
@@ -222,10 +223,10 @@ void MainWindow::displayClientDetails(QListWidgetItem* item) {
         if (it != people.end()) {
             clearLayout(mainLayout);
 
-            
+
             std::stringstream ss;
 
-            
+
             ss << "First name: " << (*it)->getFirstName() << std::endl;
             ss << "Last name: " << (*it)->getLastName() << std::endl;
             ss << "Password: " << (*it)->getPassword() << std::endl;
@@ -237,11 +238,11 @@ void MainWindow::displayClientDetails(QListWidgetItem* item) {
             ss << "  House: " << (*it)->getAddress().getHouse() << std::endl;
             ss << "  Apartment: " << (*it)->getAddress().getApartment() << std::endl;
 
-            
+
             User* user = dynamic_cast<User*>(*it);
             if (user) {
                 ss << "Contact Info: " << user->getContactInfo() << std::endl;
-                
+
                 if (!user->getRatings().empty()) {
                     ss << "Ratings: ";
                     for (int rating : user->getRatings()) {
@@ -257,11 +258,11 @@ void MainWindow::displayClientDetails(QListWidgetItem* item) {
                 }
             }
 
-            
+
             Specialist* specialist = dynamic_cast<Specialist*>(*it);
             if (specialist) {
                 ss << "Specialization: " << specialist->getSpecialization() << std::endl;
-                
+
                 if (!specialist->getCertifications().empty()) {
                     ss << "Certifications: ";
                     for (const std::string& cert : specialist->getCertifications()) {
@@ -271,10 +272,10 @@ void MainWindow::displayClientDetails(QListWidgetItem* item) {
                 }
             }
 
-            
+
             Admin* admin = dynamic_cast<Admin*>(*it);
             if (admin) {
-                
+
                 if (!admin->getPrivileges().empty()) {
                     ss << "Privileges: ";
                     for (const std::string& privilege : admin->getPrivileges()) {
@@ -284,7 +285,7 @@ void MainWindow::displayClientDetails(QListWidgetItem* item) {
                 }
             }
 
-            
+
             outputLabel->setText(QString::fromStdString(ss.str()));
 
             mainLayout->addWidget(createButton("Back", [this]() { displayAllClients(); }));
@@ -300,7 +301,7 @@ void MainWindow::findInfoByClientName() {
     clearLayout(mainLayout);
     outputLabel->setText("Enter client's first name:");
     QSpacerItem* spacer = new QSpacerItem(100, 100, QSizePolicy::Minimum, QSizePolicy::Fixed);
-    mainLayout->addItem(spacer); 
+    mainLayout->addItem(spacer);
     QLineEdit* firstNameEdit = createLineEdit();
     mainLayout->addWidget(firstNameEdit);
 
@@ -314,36 +315,36 @@ void MainWindow::findInfoByClientName() {
         QString lastName = lastNameEdit->text();
         std::cout << "Searching for: " << firstName.toStdString() << " " << lastName.toStdString() << std::endl;
 
-        
 
-        std::cout << "Loaded from database: " << people.size() << " clients" << std::endl; 
+
+        std::cout << "Loaded from database: " << people.size() << " clients" << std::endl;
         for (const Person* p : people) {
-            std::cout << "Client: " << p->getFirstName() << " " << p->getLastName() << std::endl; 
+            std::cout << "Client: " << p->getFirstName() << " " << p->getLastName() << std::endl;
         }
 
         auto it = std::find_if(people.begin(), people.end(), [&](const Person* person) {
             bool match = QString::fromStdString(person->getFirstName()) == firstName &&
                          QString::fromStdString(person->getLastName()) == lastName;
-            std::cout << "Comparing with: " << person->getFirstName() << " " << person->getLastName() << " - Match: " << match << std::endl; 
+            std::cout << "Comparing with: " << person->getFirstName() << " " << person->getLastName() << " - Match: " << match << std::endl;
             return match;
         });
 
-        std::cout << "Search result: " << (it != people.end()) << std::endl; 
+        std::cout << "Search result: " << (it != people.end()) << std::endl;
 
         if (it != people.end()) {
             clearLayout(mainLayout);
             std::stringstream ss;
 
-            
+
             ss << "First name: " << (*it)->getFirstName() << std::endl;
             ss << "Last name: " << (*it)->getLastName() << std::endl;
-            ss << "Password: " << (*it)->getPassword() << std::endl; 
+            ss << "Password: " << (*it)->getPassword() << std::endl;
 
-            
+
             User* user = dynamic_cast<User*>(*it);
             if (user) {
                 ss << "Contact Info: " << user->getContactInfo() << std::endl;
-                
+
                 if (!user->getRatings().empty()) {
                     ss << "Ratings: ";
                     for (int rating : user->getRatings()) {
@@ -359,11 +360,11 @@ void MainWindow::findInfoByClientName() {
                 }
             }
 
-            
+
             Specialist* specialist = dynamic_cast<Specialist*>(*it);
             if (specialist) {
                 ss << "Specialization: " << specialist->getSpecialization() << std::endl;
-                
+
                 if (!specialist->getCertifications().empty()) {
                     ss << "Certifications: ";
                     for (const std::string& cert : specialist->getCertifications()) {
@@ -373,10 +374,10 @@ void MainWindow::findInfoByClientName() {
                 }
             }
 
-            
+
             Admin* admin = dynamic_cast<Admin*>(*it);
             if (admin) {
-                
+
                 if (!admin->getPrivileges().empty()) {
                     ss << "Privileges: ";
                     for (const std::string& privilege : admin->getPrivileges()) {
@@ -402,7 +403,7 @@ void MainWindow::login() {
     clearLayout(mainLayout);
     outputLabel->setText("Enter your first name:");
     QSpacerItem* spacer = new QSpacerItem(100, 100, QSizePolicy::Minimum, QSizePolicy::Fixed);
-    mainLayout->addItem(spacer); 
+    mainLayout->addItem(spacer);
 
     QLineEdit* firstNameEdit = createLineEdit();
     mainLayout->addWidget(firstNameEdit);
@@ -578,7 +579,7 @@ void MainWindow::rateAndReviewUser(Specialist* specialist) {
 }
 
 void MainWindow::rateAndReviewSpecialist(User* user) {
-    
+
     clearLayout(mainLayout);
     outputLabel->setText("Rate and review a specialist:");
 
@@ -596,7 +597,7 @@ void MainWindow::rateAndReviewSpecialist(User* user) {
         QString specialistFirstName = specialistFirstNameEdit->text();
         QString specialistLastName = specialistLastNameEdit->text();
 
-        
+
 
         auto it = std::find_if(people.begin(), people.end(), [&](const Person* p) {
             return QString::fromStdString(p->getFirstName()) == specialistFirstName &&
