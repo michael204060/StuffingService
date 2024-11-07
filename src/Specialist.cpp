@@ -1,4 +1,3 @@
-
 #include "../headers/Specialist.h"
 #include <iostream>
 #include <sstream>

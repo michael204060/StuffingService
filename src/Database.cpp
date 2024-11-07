@@ -1,4 +1,3 @@
-
 #include "../headers/Database.h"
 #include <iostream>
 #include <string>

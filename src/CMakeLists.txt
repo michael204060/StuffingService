@@ -32,6 +32,8 @@ add_executable(StuffingService
         ../headers/Specialist.h
         ../headers/User.h
         ../headers/MainWindow.h
+        ../headers/exceptions.h
+        exceptions.cpp
 )
 
 target_link_libraries(StuffingService

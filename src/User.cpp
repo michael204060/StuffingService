@@ -1,4 +1,3 @@
-// User.cpp
 #include "../headers/User.h"
 #include <iomanip>
 #include <sstream>
@@ -98,12 +97,10 @@ void User::loadFromStatement(sqlite3_stmt* stmt) {
     }
 }
 
-// Getters
 const Address& User::getAddress() const { return address; }
 std::string User::getContactInfo() const { return contactInfo; }
 const std::vector<int>& User::getRatings() const { return ratings; }
 const std::vector<std::string>& User::getReviews() const { return reviews; }
 
-// Setters
 void User::setAddress(const Address& address) { this->address = address; }
 void User::setContactInfo(const std::string& contactInfo) { this->contactInfo = contactInfo; }
