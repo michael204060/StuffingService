@@ -104,3 +104,4 @@ const std::vector<std::string>& User::getReviews() const { return reviews; }
 
 void User::setAddress(const Address& address) { this->address = address; }
 void User::setContactInfo(const std::string& contactInfo) { this->contactInfo = contactInfo; }
+
