@@ -1,6 +1,3 @@
-//
-// Created by micha on 31.10.2024.
-//
 
 #ifndef AWESOME_PROJECT_PLUS_WINDOW_H
 #define AWESOME_PROJECT_PLUS_WINDOW_H
@@ -16,6 +13,8 @@
 #include <vector>
 #include <QString>
 #include <functional>
+#include <QPixmap>  
+#include <QPainter> 
 #include "../headers/Person.h"
 #include "../headers/Database.h"
 #include "../headers/Admin.h"
@@ -51,6 +50,9 @@ private:
     QVBoxLayout* mainLayout;
     std::vector<Person*> people;
 
+    
+    QPixmap backgroundImage; 
+
     void mainMenu();
     void createMainMenuButtons();
     void clearLayout(QLayout* layout);
@@ -60,6 +62,10 @@ private:
     QLineEdit* createLineEdit(const QString& placeholder = "");
     QPushButton* createButton(const QString& text, std::function<void()> callback);
     void createPersonInputForm(const QString& type);
+
+protected:
+    
+    void paintEvent(QPaintEvent* event) override;
 };
 
-#endif
+#endif 

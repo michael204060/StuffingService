@@ -1,4 +1,3 @@
-
 #include "../headers/Address.h"
 #include <iostream>
 
@@ -59,7 +58,6 @@ std::string Address::getCity() const { return city; }
 std::string Address::getStreet() const { return street; }
 std::string Address::getHouse() const { return house; }
 std::string Address::getApartment() const { return apartment; }
-
 
 void Address::setCountry(const std::string& country) { this->country = country; }
 void Address::setRegion(const std::string& region) { this->region = region; }

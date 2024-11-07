@@ -1,4 +1,3 @@
-
 #include "../headers/Admin.h"
 #include <iostream>
 #include <algorithm>
