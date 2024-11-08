@@ -216,16 +216,17 @@ void MainWindow::displayAllClients() {
     clearLayout(mainLayout);
 
     QListWidget* clientList = new QListWidget(this);
-    clientList->setStyleSheet("background-color: lightblue; color: red;"); 
-
+    clientList->setStyleSheet("background-color: lightblue; color: red;");
 
     for (const Person* person : people) {
         std::stringstream ss;
         ss << person->getFirstName() << " " << person->getLastName() << "\n";
 
-        
-        ss << "Address: " << person->getAddress().getCountry() << ", "
-          << person->getAddress().getRegion() << ", " << person->getAddress().getCity() << "\n";
+        // Вывод адреса (как и раньше)
+        const Address& address = person->getAddress();
+        ss << "Address: " << address.getCountry() << ", "
+           << address.getRegion() << ", " << address.getCity() << "\n";
+
 
         const User* user = dynamic_cast<const User*>(person);
         if (user) {
@@ -235,14 +236,16 @@ void MainWindow::displayAllClients() {
             }
         }
 
+        // Вывод специализации для Specialist
         const Specialist* specialist = dynamic_cast<const Specialist*>(person);
         if (specialist) {
             ss << "Specialization: " << specialist->getSpecialization() << "\n";
+            std::cout << "Specialization: " << specialist->getSpecialization() << "\n";
+            // Вывод сертификатов (если нужно)
             for (const auto& cert : specialist->getCertifications()) {
                 ss << "Certification: " << cert << "\n";
             }
         }
-
 
         new QListWidgetItem(QString::fromStdString(ss.str()), clientList);
     }
@@ -273,6 +276,7 @@ void MainWindow::displayClientDetails(QListWidgetItem* item) {
             std::stringstream ss;
 
             ss << "First name: " << (*it)->getFirstName() << std::endl;
+            std::cout << "First name: " << (*it)->getFirstName() << "\n";
             ss << "Last name: " << (*it)->getLastName() << std::endl;
             ss << "Password: " << (*it)->getPassword() << std::endl;
             ss << "Address: " << std::endl;
