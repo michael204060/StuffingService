@@ -1,18 +1,29 @@
-#include "../headers/MainWindow.h"
+#include "../headers/MainWindow.h" 
 #include "../headers/Address.h"
 #include "../headers/User.h"
 #include "../headers/Admin.h"
 #include "../headers/Specialist.h"
 #include "../headers/Database.h"
 #include "../headers/exceptions.h"
+#include "../headers/ReportGenerator.h"
+
 #include <QMessageBox>
 #include <QInputDialog>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QLabel>
+#include <QVBoxLayout>
+#include <QListWidget>
+#include <QString>
 #include <sstream>
 #include <functional>
 #include <QPainter>
+#include <QTextEdit>  
+#include <QFile>      
+#include <QTextStream> 
+#include <QFileDialog> 
 #include <QApplication>
 #include <QScreen>
-#include <QSpacerItem>
 
 MainWindow::MainWindow(Database& database, QWidget* parent) : QWidget(parent), db(database) {
     loadFromDatabase();
@@ -30,7 +41,7 @@ MainWindow::MainWindow(Database& database, QWidget* parent) : QWidget(parent), d
     mainLayout->addWidget(outputLabel);
 
     
-    QString buttonStyle = "QPushButton { background-color: green; color: red; }";
+    QString buttonStyle = "QPushButton { background-color: purple; color: red; }";
     
     this->setStyleSheet(buttonStyle);
 
@@ -55,7 +66,6 @@ MainWindow::~MainWindow() {
 
 void MainWindow::mainMenu() {
     clearLayout(mainLayout);
-    outputLabel->setText("Welcome to the main menu!");
     createMainMenuButtons();
 }
 
@@ -305,10 +315,17 @@ void MainWindow::findInfoByClientName() {
     clearLayout(mainLayout);
     outputLabel->setText("Enter client's first name:");
 
+    QSpacerItem* spacer = new QSpacerItem(100, 100, QSizePolicy::Minimum, QSizePolicy::Fixed);
+    mainLayout->addItem(spacer);
+
     QLineEdit* firstNameEdit = createLineEdit();
     mainLayout->addWidget(firstNameEdit);
 
     mainLayout->addWidget(new QLabel("Enter client's last name:", this));
+    QSpacerItem* spacerLow = new QSpacerItem(100, 100, QSizePolicy::Minimum, QSizePolicy::Fixed);
+    mainLayout->addItem(spacerLow);
+
+
     QLineEdit* lastNameEdit = createLineEdit();
     mainLayout->addWidget(lastNameEdit);
 
@@ -452,7 +469,12 @@ void MainWindow::handleLogin(Person* person) {
     if (user) {
         mainLayout->addWidget(createButton("Rate and Review Specialist", [this, user]() {
             rateAndReviewSpecialist(user);
+
+
         }));
+        mainLayout->addWidget(createButton("Find Specialist", [this, user]() { generateReport(user); })); 
+
+
     } else if (specialist) {
         mainLayout->addWidget(createButton("Rate and Review User", [this, specialist]() {
             rateAndReviewUser(specialist);
@@ -470,6 +492,101 @@ void MainWindow::handleLogin(Person* person) {
     outputLabel->setText(profile);
     mainLayout->addWidget(createButton("Logout", [this]() { logout(); }));
 }
+
+void MainWindow::generateReport(User* user) {
+    clearLayout(mainLayout);
+    outputLabel->setText("Generate Specialist Report:");
+
+    QLineEdit* specializationEdit = createLineEdit("Specialization");
+    mainLayout->addWidget(specializationEdit);
+
+
+
+    mainLayout->addWidget(createButton("Generate report", [this, user, specializationEdit]() {
+        std::string specialization = specializationEdit->text().toStdString();
+
+
+        ReportGenerator reportGenerator;
+        std::vector<Specialist*> matchingSpecialists = findMatchingSpecialists(user, specialization);
+
+
+        QString report = QString::fromStdString(reportGenerator.generateXMLReport(matchingSpecialists));
+
+
+        QTextEdit* reportTextEdit = new QTextEdit(this);
+        reportTextEdit->setPlainText(report);
+        reportTextEdit->setReadOnly(true);
+
+
+        clearLayout(mainLayout);
+        mainLayout->addWidget(reportTextEdit);
+
+
+
+        mainLayout->addWidget(createButton("Save Report", [report]() {
+            QString fileName = QFileDialog::getSaveFileName(nullptr, "Save Report", "", "XML Files (*.xml);;All Files (*)");
+            if (!fileName.isEmpty()) {
+                QFile file(fileName);
+                if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+                    QTextStream out(&file);
+                    out << report;
+                    file.close();
+                }
+            }
+        }));
+        mainLayout->addWidget(createButton("Back", [this, user]() { handleLogin(user); }));
+
+    }));
+
+
+    mainLayout->addWidget(createButton("Back", [this, user]() { handleLogin(user); }));
+}
+
+
+std::vector<Specialist*> MainWindow::findMatchingSpecialists(User* user, const std::string& specialization) {
+    std::vector<Specialist*> matchingSpecialists;
+
+    for (Person* person : people) {
+        Specialist* specialist = dynamic_cast<Specialist*>(person);
+        if (specialist) {
+            if (specializationMatches(specialist->getSpecialization(), specialization) &&
+                addressMatches(user->getAddress(), specialist->getAddress())) {
+                matchingSpecialists.push_back(specialist);
+            }
+        }
+    }
+    return matchingSpecialists;
+}
+
+bool MainWindow::specializationMatches(const std::string& specialistSpecialization, const std::string& userSpecialization) {
+    std::string lowerSpec = specialistSpecialization;
+    std::transform(lowerSpec.begin(), lowerSpec.end(), lowerSpec.begin(), ::tolower);
+    std::string lowerUser = userSpecialization;
+    std::transform(lowerUser.begin(), lowerUser.end(), lowerUser.begin(), ::tolower);
+
+    if (lowerSpec.find(lowerUser) != std::string::npos) return true;
+
+
+    int diffCount = 0;
+    int minLength = std::min(lowerSpec.length(), lowerUser.length());
+    for (int i = 0; i < minLength; ++i) {
+        if (lowerSpec[i] != lowerUser[i]) {
+            diffCount++;
+        }
+    }
+    return diffCount < 3;
+}
+
+
+bool MainWindow::addressMatches(const Address& userAddress, const Address& specialistAddress) {
+    return (userAddress.getCountry() == specialistAddress.getCountry() ||
+            userAddress.getRegion() == specialistAddress.getRegion() ||
+            userAddress.getCity() == specialistAddress.getCity() ||
+            userAddress.getStreet() == specialistAddress.getStreet() ||
+            userAddress.getHouse() == specialistAddress.getHouse() ||
+            userAddress.getApartment() == specialistAddress.getApartment());
+}
+
 
 void MainWindow::editProfile(Person* person) {
     clearLayout(mainLayout);
