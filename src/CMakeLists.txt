@@ -36,6 +36,8 @@ add_executable(StuffingService
         exceptions.cpp
         ../headers/ReportGenerator.h
         ReportGenerator.cpp
+        ../headers/MyContainer.h
+        MyContainer.cpp
 )
 
 target_link_libraries(StuffingService

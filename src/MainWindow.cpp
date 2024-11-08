@@ -222,7 +222,7 @@ void MainWindow::displayAllClients() {
         std::stringstream ss;
         ss << person->getFirstName() << " " << person->getLastName() << "\n";
 
-        // Вывод адреса (как и раньше)
+        
         const Address& address = person->getAddress();
         ss << "Address: " << address.getCountry() << ", "
            << address.getRegion() << ", " << address.getCity() << "\n";
@@ -236,12 +236,12 @@ void MainWindow::displayAllClients() {
             }
         }
 
-        // Вывод специализации для Specialist
+        
         const Specialist* specialist = dynamic_cast<const Specialist*>(person);
         if (specialist) {
             ss << "Specialization: " << specialist->getSpecialization() << "\n";
             std::cout << "Specialization: " << specialist->getSpecialization() << "\n";
-            // Вывод сертификатов (если нужно)
+            
             for (const auto& cert : specialist->getCertifications()) {
                 ss << "Certification: " << cert << "\n";
             }
