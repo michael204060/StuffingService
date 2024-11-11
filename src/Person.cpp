@@ -49,18 +49,14 @@ void Person::bindToStatement(sqlite3_stmt* stmt, int& index) const {
 }
 
 void Person::loadFromStatement(sqlite3_stmt* stmt) {
-    int index = 2; 
+    int index = 2;
 
-    const char* tempFirstName = reinterpret_cast<const char*>(sqlite3_column_text(stmt, index++));
-    firstName = (tempFirstName != nullptr) ? tempFirstName : "";
-
-    const char* tempLastName = reinterpret_cast<const char*>(sqlite3_column_text(stmt, index++));
-    lastName = (tempLastName != nullptr) ? tempLastName : "";
-
-    const char* tempPassword = reinterpret_cast<const char*>(sqlite3_column_text(stmt, index));
-    password = (tempPassword != nullptr) ? tempPassword : "";
+    firstName = reinterpret_cast<const char*>(sqlite3_column_text(stmt, index++));
+    lastName = reinterpret_cast<const char*>(sqlite3_column_text(stmt, index++));
+    password = reinterpret_cast<const char*>(sqlite3_column_text(stmt, index));
 }
+
 const Address& Person::getAddress() const {
-    static Address emptyAddress; 
-    return emptyAddress;        
+    static Address emptyAddress;
+    return emptyAddress;
 }

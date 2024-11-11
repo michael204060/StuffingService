@@ -16,6 +16,7 @@
 #include "../headers/Database.h"
 #include "../headers/Admin.h"
 #include "../headers/Specialist.h"
+#include "../headers/User.h"
 #include <QTextEdit>
 #include <QFileDialog>
 

@@ -45,7 +45,7 @@ void Admin::bindToStatement(sqlite3_stmt* stmt, int& index) const {
 
 void Admin::loadFromStatement(sqlite3_stmt* stmt) {
     Person::loadFromStatement(stmt);
-    int index = 14;  
+    int index = 4;
 
     const char* tempPrivilegesStr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, index));
     std::string privilegesStr = (tempPrivilegesStr != nullptr) ? tempPrivilegesStr : "";
@@ -64,7 +64,7 @@ const std::vector<std::string>& Admin::getPrivileges() const { return privileges
 
 template <typename T>
 void Admin::addPrivilege(const T& privilege) {
-    privileges.push_back(std::to_string(privilege)); 
+    privileges.push_back(std::to_string(privilege));
 }
 
 template <typename T>

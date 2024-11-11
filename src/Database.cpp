@@ -70,14 +70,11 @@ void Database::saveToDatabase(const std::vector<Person*>& people) {
         std::string type;
         if (dynamic_cast<const User*>(person)) {
             type = "User";
-        }
-        else if (dynamic_cast<const Specialist*>(person)) {
+        } else if (dynamic_cast<const Specialist*>(person)) {
             type = "Specialist";
-        }
-        else if (dynamic_cast<const Admin*>(person)) {
+        } else if (dynamic_cast<const Admin*>(person)) {
             type = "Admin";
-        }
-        else {
+        } else {
             std::cerr << "Unknown person type." << std::endl;
             continue;
         }
@@ -115,17 +112,16 @@ std::vector<Person*> Database::loadFromDatabase() {
         exit(1);
     }
     while (sqlite3_step(stmt) == SQLITE_ROW) {
-        std::string type = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+         std::string type = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
         Person* person = nullptr;
         if (type == "User") {
             person = new User();
-        }
-        else if (type == "Specialist") {
+        } else if (type == "Specialist") {
             person = new Specialist();
-        }
-        else if (type == "Admin") {
+        } else if (type == "Admin") {
             person = new Admin();
         }
+
         if (person) {
             person->loadFromStatement(stmt);
             people.push_back(person);

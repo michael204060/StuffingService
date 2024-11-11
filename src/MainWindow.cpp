@@ -41,7 +41,7 @@ MainWindow::MainWindow(Database& database, QWidget* parent) : QWidget(parent), d
     mainLayout->addWidget(outputLabel);
 
     
-    QString buttonStyle = "QPushButton { background-color: purple; color: red; }";
+    QString buttonStyle = "QPushButton { background-color: purple; color: white; }";
     
     this->setStyleSheet(buttonStyle);
 
@@ -216,7 +216,7 @@ void MainWindow::displayAllClients() {
     clearLayout(mainLayout);
 
     QListWidget* clientList = new QListWidget(this);
-    clientList->setStyleSheet("background-color: lightblue; color: red;");
+    clientList->setStyleSheet("background-color: lightblue; color: white;");
 
     for (const Person* person : people) {
         std::stringstream ss;
@@ -295,7 +295,7 @@ void MainWindow::displayClientDetails(QListWidgetItem* item) {
 
             
             QLabel* userInfoLabel = new QLabel(QString::fromStdString(ss.str()), this);
-            userInfoLabel->setStyleSheet("color: red;"); 
+            userInfoLabel->setStyleSheet("color: white;");
             userInfoLabel->setWordWrap(true); 
             infoLayout->addWidget(userInfoLabel); 
 

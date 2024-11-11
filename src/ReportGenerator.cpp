@@ -1,6 +1,6 @@
 #include "../headers/ReportGenerator.h"
 #include <sstream>
-#include <iomanip> // Include for formatting average rating
+#include <iomanip>
 
 
 std::string ReportGenerator::generateXMLReport(const std::vector<Specialist*>& specialists) {
