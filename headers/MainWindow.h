@@ -19,6 +19,8 @@
 #include "../headers/User.h"
 #include <QTextEdit>
 #include <QFileDialog>
+#include "../headers/MyContainer.h" 
+
 
 class MainWindow : public QWidget {
     Q_OBJECT
@@ -49,7 +51,8 @@ private:
     Database& db;
     QLabel* outputLabel;
     QVBoxLayout* mainLayout;
-    std::vector<Person*> people;
+    MyContainer<Person*> people; 
+    Person* logged_in_user = nullptr;
     QPixmap backgroundImage;
 
     void mainMenu();
@@ -64,6 +67,7 @@ private:
     std::vector<Specialist*> findMatchingSpecialists(User* user, const std::string& specialization);
     bool specializationMatches(const std::string& specialistSpecialization, const std::string& userSpecialization);
     bool addressMatches(const Address& userAddress, const Address& specialistAddress);
+    Person* getLoggedInUser() const; 
 
 protected:
     void paintEvent(QPaintEvent* event) override;
