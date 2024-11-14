@@ -122,9 +122,9 @@ void Specialist::loadFromStatement(sqlite3_stmt* stmt) {
             try {
                 ratings.push_back(std::stoi(ratingPiece));
             } catch (const std::invalid_argument& e) {
-                // Handle error
+
             } catch (const std::out_of_range& e) {
-                // Handle error
+
             }
         }
     }

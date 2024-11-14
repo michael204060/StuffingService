@@ -52,7 +52,7 @@ private:
     QLabel* outputLabel;
     QVBoxLayout* mainLayout;
     MyContainer<Person*> people; 
-    Person* logged_in_user = nullptr;
+    Person* loggedInUser = nullptr;
     QPixmap backgroundImage;
 
     void mainMenu();
