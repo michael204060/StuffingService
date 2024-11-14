@@ -407,11 +407,11 @@ void MainWindow::login() {
     mainLayout->addWidget(createButton("Back", [this]() { mainMenu(); }));
 }
 Person* MainWindow::getLoggedInUser() const {
-    return logged_in_user;
+    return loggedInUser;
 }
 void MainWindow::handleLogin(Person* person) {
     clearLayout(mainLayout);
-    logged_in_user = person;
+    loggedInUser = person;
     QString profile = "Welcome, " + QString::fromStdString(person->getFirstName()) + "!\n\n";
     User* user = dynamic_cast<User*>(person);
     Specialist* specialist = dynamic_cast<Specialist*>(person);
@@ -620,7 +620,7 @@ std::vector<Specialist*> MainWindow::findMatchingSpecialists(User* user, const s
     return matchingSpecialists;
 }
 void MainWindow::logout() {
-    logged_in_user = nullptr;
+    loggedInUser = nullptr;
     mainMenu();
 }
 void MainWindow::generateReport(User *user) {
