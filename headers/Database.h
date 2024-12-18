@@ -16,6 +16,8 @@ public:
     void initializeDatabase();
     void saveToDatabase(const std::vector<Person*>& people);
     std::vector<Person*> loadFromDatabase();
+    bool isPasswordUnique(const std::string& password) const;
+    bool doesAdminExist() const; 
 };
 
-#endif 
+#endif

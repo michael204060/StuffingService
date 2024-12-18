@@ -5,6 +5,7 @@
 #include "../headers/User.h"
 #include "../headers/Admin.h"
 #include "../headers/Specialist.h"
+#include <sstream>
 
 Database::Database() : db(nullptr) {}
 
@@ -20,26 +21,26 @@ void Database::initializeDatabase() {
         std::cerr << "Error opening database: " << sqlite3_errmsg(db) << std::endl;
         exit(1);
     }
-    std::string sql;
-    sql = "CREATE TABLE IF NOT EXISTS people ("
-          "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-          "type TEXT,"
-          "firstName TEXT,"
-          "lastName TEXT,"
-          "password TEXT,"
-          "country TEXT,"
-          "region TEXT,"
-          "city TEXT,"
-          "street TEXT,"
-          "house TEXT,"
-          "apartment TEXT,"
-          "contactInfo TEXT,"
-          "specialization TEXT,"
-          "certifications TEXT,"
-          "privileges TEXT,"
-          "ratings TEXT,"
-          "reviews TEXT"
-          ");";
+
+    std::string sql = "CREATE TABLE IF NOT EXISTS people ("
+                      "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                      "type TEXT,"
+                      "firstName TEXT,"
+                      "lastName TEXT,"
+                      "password TEXT,"
+                      "country TEXT,"
+                      "region TEXT,"
+                      "city TEXT,"
+                      "street TEXT,"
+                      "house TEXT,"
+                      "apartment TEXT,"
+                      "contactInfo TEXT,"
+                      "specialization TEXT,"
+                      "certifications TEXT,"
+                      "ratings TEXT,"
+                      "reviews TEXT"
+                      ");";
+
     char* errmsg;
     rc = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &errmsg);
     if (rc != SQLITE_OK) {
@@ -47,12 +48,22 @@ void Database::initializeDatabase() {
         sqlite3_free(errmsg);
         exit(1);
     }
+
+    if (!doesAdminExist()) {
+        sql = "INSERT INTO people (type, firstName, lastName, password) VALUES ('Admin', 'Michael', 'Karduban', '204060');";
+        rc = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &errmsg);
+        if (rc != SQLITE_OK) {
+            std::cerr << "SQL error (admin insert): " << errmsg << std::endl;
+            sqlite3_free(errmsg);
+            exit(1);
+        }
+    }
 }
 
 void Database::saveToDatabase(const std::vector<Person*>& people) {
     sqlite3_exec(db, "DELETE FROM people;", nullptr, nullptr, nullptr);
 
-    std::string sql = "INSERT INTO people (type, firstName, lastName, password, country, region, city, street, house, apartment, contactInfo, specialization, certifications, privileges, ratings, reviews) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+    std::string sql = "INSERT INTO people (type, firstName, lastName, password, country, region, city, street, house, apartment, contactInfo, specialization, certifications, ratings, reviews) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
     sqlite3_stmt* stmt;
     int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
@@ -129,4 +140,47 @@ std::vector<Person*> Database::loadFromDatabase() {
     }
     sqlite3_finalize(stmt);
     return people;
+}
+
+bool Database::isPasswordUnique(const std::string& password) const {
+    std::string sql = "SELECT COUNT(*) FROM people WHERE password = ?";
+    sqlite3_stmt* stmt;
+    int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+    if (rc != SQLITE_OK) {
+        std::cerr << "SQL error: " << sqlite3_errmsg(db) << std::endl;
+        return false; 
+    }
+    sqlite3_bind_text(stmt, 1, password.c_str(), -1, SQLITE_TRANSIENT);
+    rc = sqlite3_step(stmt);
+    if (rc != SQLITE_ROW) {
+        std::cerr << "SQL error: " << sqlite3_errmsg(db) << std::endl;
+        sqlite3_finalize(stmt);
+        return false; 
+    }
+    int count = sqlite3_column_int(stmt, 0);
+    sqlite3_finalize(stmt);
+    return count == 0;
+}
+
+bool Database::doesAdminExist() const {
+    std::string sql = "SELECT COUNT(*) FROM people WHERE type = 'Admin'";
+    sqlite3_stmt* stmt;
+    int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+
+    if (rc != SQLITE_OK) {
+        std::cerr << "SQL error checking admin existence: " << sqlite3_errmsg(db) << std::endl;
+        return false;
+    }
+
+    rc = sqlite3_step(stmt);
+    if (rc != SQLITE_ROW) {
+        std::cerr << "SQL error checking admin existence: " << sqlite3_errmsg(db) << std::endl;
+        sqlite3_finalize(stmt);
+        return false;
+    }
+
+    int count = sqlite3_column_int(stmt, 0);
+    sqlite3_finalize(stmt);
+
+    return count > 0;
 }
