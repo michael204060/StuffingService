@@ -1,6 +1,5 @@
 #ifndef AWESOME_PROJECT_PLUS_WINDOW_H
 #define AWESOME_PROJECT_PLUS_WINDOW_H
-
 #include <QWidget>
 #include <QPushButton>
 #include <QLineEdit>
@@ -10,8 +9,6 @@
 #include <vector>
 #include <QString>
 #include <functional>
-
-#include <QPainter>
 #include <QTextEdit>
 #include <QFileDialog>
 #include "../headers/Person.h"
@@ -20,14 +17,11 @@
 #include "../headers/Specialist.h"
 #include "../headers/User.h"
 #include "../headers/MyContainer.h"
-
 class MainWindow : public QWidget {
     Q_OBJECT
-
 public:
     explicit MainWindow(Database& db, QWidget* parent = nullptr);
     ~MainWindow();
-
 private slots:
     void addNewClient();
     void createUser();
@@ -44,18 +38,12 @@ private slots:
     void deleteUserByName(Admin* admin);
     void logout();
     void generateReport(User* user);
-
-
 private:
     Database& db;
     QLabel* outputLabel;
     QVBoxLayout* mainLayout;
-    QVBoxLayout* contentLayout; 
-    QWidget* centralWidget;    
     MyContainer<Person*> people;
     Person* loggedInUser = nullptr;
-    QPixmap backgroundImage; 
-
     void mainMenu();
     void createMainMenuButtons();
     void clearLayout(QLayout* layout);
@@ -69,9 +57,10 @@ private:
     bool addressMatches(const Address& userAddress, const Address& specialistAddress);
     bool areAllFieldsFilled(const QLineEdit* firstNameEdit, const QLineEdit* lastNameEdit, const QLineEdit* passwordEdit, const QLineEdit* countryEdit, const QLineEdit* regionEdit, const QLineEdit* cityEdit, const QLineEdit* streetEdit, const QLineEdit* houseEdit, const QLineEdit* apartmentEdit, const QLineEdit* contactEdit, const QLineEdit* specializationEdit = nullptr, const QLineEdit* certificationsEdit = nullptr) const;
     Person* getLoggedInUser() const;
-
+    void displayClientDetailsInList(Person* person, QListWidget* listWidget);
 protected:
     void paintEvent(QPaintEvent* event) override;
+private:
+    void resizeEvent(QResizeEvent* event) override;
 };
-
-#endif 
+#endif
