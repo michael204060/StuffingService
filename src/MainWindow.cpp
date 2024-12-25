@@ -38,6 +38,8 @@ MainWindow::MainWindow(Database& database, QWidget* parent) : QWidget(parent), d
     mainLayout->setContentsMargins(50, 50, 50, 50);
     mainLayout->setSpacing(20);
     this->setStyleSheet("QWidget { background-color: white; }");
+    setMinimumSize(600, 500);
+    resize(600, 500);
     mainMenu();
     setLayout(mainLayout);
 }
@@ -590,23 +592,30 @@ void MainWindow::deleteAccount(Person* person) {
         handleLogin(person);
     }
 }
+
 void MainWindow::rateAndReviewUser(Specialist* specialist) {
     clearLayout(mainLayout);
     outputLabel->setText("Rate and review a user:");
+
     QLineEdit* userFirstNameEdit = createLineEdit("User First Name");
     QLineEdit* userLastNameEdit = createLineEdit("User Last Name");
     QLineEdit* ratingEdit = createLineEdit("Rating (1-5)");
     QLineEdit* reviewEdit = createLineEdit("Review");
+
     mainLayout->addWidget(userFirstNameEdit);
     mainLayout->addWidget(userLastNameEdit);
     mainLayout->addWidget(ratingEdit);
     mainLayout->addWidget(reviewEdit);
+
     auto submitReview = [this, specialist, userFirstNameEdit, userLastNameEdit, ratingEdit, reviewEdit]() {
         QString userFirstName = userFirstNameEdit->text();
         QString userLastName = userLastNameEdit->text();
+
         loadFromDatabase();
+
         bool userFound = false;
         User* foundUser = nullptr;
+
         for (Person* p : people) {
             foundUser = dynamic_cast<User*>(p);
             if (foundUser && QString::fromStdString(foundUser->getFirstName()) == userFirstName && QString::fromStdString(foundUser->getLastName()) == userLastName) {
@@ -614,45 +623,62 @@ void MainWindow::rateAndReviewUser(Specialist* specialist) {
                 break;
             }
         }
+
         if (!userFound) {
             QMessageBox::warning(this, "Error", "User not found.");
             return;
         }
+
         if (foundUser) {
             bool ok;
             int rating = ratingEdit->text().toInt(&ok);
             if (ok && rating >= 1 && rating <= 5) {
                 foundUser->addRating(rating);
                 foundUser->addReview(reviewEdit->text().toStdString());
+
                 saveToDatabase();
+                loadFromDatabase();
+
                 clearLayout(mainLayout);
-                outputLabel->setText("Rating and review submitted successfully!");
-                mainLayout->addWidget(createButton("Back", [this, specialist]() { handleLogin(specialist); }));
+                QLabel* successLabel = new QLabel("Rating and review submitted successfully!", this);
+                successLabel->setStyleSheet("QLabel { color: black; font-size: 18px; qproperty-alignment: AlignCenter; }");
+                mainLayout->addWidget(successLabel);
+                mainLayout->addWidget(createButton("Back", [this]() { handleLogin(loggedInUser); }));
+                this->update();
             } else {
                 QMessageBox::warning(this, "Error", "Invalid rating. Please enter a number between 1 and 5.");
             }
         }
     };
+
     mainLayout->addWidget(createButton("Submit", submitReview));
-    mainLayout->addWidget(createButton("Back", [this, specialist]() { handleLogin(specialist); }));
+    mainLayout->addWidget(createButton("Back", [this]() { handleLogin(loggedInUser); }));
 }
+
+
 void MainWindow::rateAndReviewSpecialist(User* user) {
     clearLayout(mainLayout);
     outputLabel->setText("Rate and review a specialist:");
+
     QLineEdit* specialistFirstNameEdit = createLineEdit("Specialist First Name");
     QLineEdit* specialistLastNameEdit = createLineEdit("Specialist Last Name");
     QLineEdit* ratingEdit = createLineEdit("Rating (1-5)");
     QLineEdit* reviewEdit = createLineEdit("Review");
+
     mainLayout->addWidget(specialistFirstNameEdit);
     mainLayout->addWidget(specialistLastNameEdit);
     mainLayout->addWidget(ratingEdit);
     mainLayout->addWidget(reviewEdit);
+
     auto submitReview = [this, user, specialistFirstNameEdit, specialistLastNameEdit, ratingEdit, reviewEdit]() {
         QString specialistFirstName = specialistFirstNameEdit->text();
         QString specialistLastName = specialistLastNameEdit->text();
+
         loadFromDatabase();
+
         bool specialistFound = false;
         Specialist* foundSpecialist = nullptr;
+
         for (Person* p : people) {
             foundSpecialist = dynamic_cast<Specialist*>(p);
             if (foundSpecialist && QString::fromStdString(foundSpecialist->getFirstName()) == specialistFirstName &&
@@ -661,28 +687,38 @@ void MainWindow::rateAndReviewSpecialist(User* user) {
                 break;
             }
         }
+
         if (!specialistFound) {
             QMessageBox::warning(this, "Error", "Specialist not found.");
             return;
         }
+
         if (foundSpecialist) {
             bool ok;
             int rating = ratingEdit->text().toInt(&ok);
             if (ok && rating >= 1 && rating <= 5) {
                 foundSpecialist->addRating(rating);
                 foundSpecialist->addReview(reviewEdit->text().toStdString());
+
                 saveToDatabase();
+                loadFromDatabase();
                 clearLayout(mainLayout);
-                outputLabel->setText("Rating and review submitted successfully!");
-                mainLayout->addWidget(createButton("Back", [this, user]() { handleLogin(user); }));
+
+                QLabel* successLabel = new QLabel("Rating and review submitted successfully!", this);
+                successLabel->setStyleSheet("QLabel { color: black; font-size: 18px; qproperty-alignment: AlignCenter; }");
+                mainLayout->addWidget(successLabel);
+                mainLayout->addWidget(createButton("Back", [this]() { handleLogin(loggedInUser); }));
+                this->update();
             } else {
                 QMessageBox::warning(this, "Error", "Invalid rating. Please enter a number between 1 and 5.");
             }
         }
     };
+
     mainLayout->addWidget(createButton("Submit", submitReview));
-    mainLayout->addWidget(createButton("Back", [this, user]() { handleLogin(user); }));
+    mainLayout->addWidget(createButton("Back", [this]() { handleLogin(loggedInUser); }));
 }
+
 void MainWindow::deleteUserByName(Admin* admin) {
     clearLayout(mainLayout);
     outputLabel->setText("Enter client's first name:");
