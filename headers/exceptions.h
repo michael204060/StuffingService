@@ -20,4 +20,20 @@ public:
     const char* what() const noexcept override { return message.c_str(); }
 };
 
+class PasswordNotUniqueException : public std::exception {
+private:
+    std::string message;
+public:
+    explicit PasswordNotUniqueException(const std::string& msg) : message(msg) {}
+    const char* what() const noexcept override { return message.c_str(); }
+};
+
+class EmptyFieldException : public std::exception {
+private:
+    std::string message;
+public:
+    explicit EmptyFieldException(const std::string& msg) : message(msg) {}
+    const char* what() const noexcept override { return message.c_str(); }
+};
+
 #endif

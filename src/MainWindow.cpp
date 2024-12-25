@@ -29,93 +29,66 @@
 MainWindow::MainWindow(Database& database, QWidget* parent) : QWidget(parent), db(database) {
     loadFromDatabase();
     setWindowTitle("Stuffing Service");
-    QString imagePath = "C:/Users/micha/CLionProjects/StuffingService/resources/1111.png";
-    backgroundImage.load(imagePath);
-    outputLabel = new QLabel("Welcome to Stuffing service!", this);
+    outputLabel = new QLabel(this);
     outputLabel->setWordWrap(true);
-    outputLabel->setStyleSheet("color: white;");
+    outputLabel->setStyleSheet("QLabel { color: black; font-size: 18px; qproperty-alignment: AlignCenter; }");
     mainLayout = new QVBoxLayout(this);
     mainLayout->addWidget(outputLabel);
-    QString buttonStyle = "QPushButton { background-color: purple; color: white; }";
-    this->setStyleSheet(buttonStyle);
+    mainLayout->setAlignment(Qt::AlignCenter);
+    mainLayout->setContentsMargins(50, 50, 50, 50);
+    mainLayout->setSpacing(20);
+    this->setStyleSheet("QWidget { background-color: white; }");
+    setMinimumSize(600, 500);
+    resize(600, 500);
     mainMenu();
     setLayout(mainLayout);
 }
-void MainWindow::paintEvent(QPaintEvent* event) {
-    QPainter painter(this);
-    painter.drawPixmap(rect(), backgroundImage.scaled(size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
-}
-MainWindow::~MainWindow() {
-    saveToDatabase();
-    for (Person* p : people) {
-        delete p;
-    }
-}
-void MainWindow::mainMenu() {
-    clearLayout(mainLayout);
-    Person* loggedInUser = getLoggedInUser();
-    Admin* admin = dynamic_cast<Admin*>(loggedInUser);
-    if (admin) {
-        mainLayout->addWidget(createButton("Display All Clients", [this]() { displayAllClients(); }));
-    } else {
-        createMainMenuButtons();
-    }
-}
-void MainWindow::createMainMenuButtons() {
-    mainLayout->addWidget(createButton("Add New Client", [this]() { addNewClient(); }));
-    mainLayout->addWidget(createButton("Display All Clients", [this]() { displayAllClients(); }));
-    mainLayout->addWidget(createButton("Find Info By Client Name", [this]() { findInfoByClientName(); }));
-    mainLayout->addWidget(createButton("Login", [this]() { login(); }));
-}
-void MainWindow::clearLayout(QLayout* layout) {
-    QLayoutItem* item;
-    while ((item = layout->takeAt(0)) != nullptr) {
-        if (item->widget() && item->widget() != outputLabel) {
-            delete item->widget();
-        }
-        delete item;
-    }
-}
-void MainWindow::loadFromDatabase() {
-    for (Person* p : people) {
-        delete p;
-    }
-    people.clear();
-    std::vector<Person*> tempPeople = db.loadFromDatabase(); 
-    for(Person* p : tempPeople){
-        people.add(p); 
-    }
-}
-void MainWindow::saveToDatabase() {
-    std::vector<Person*> tempPeople; 
-    for(Person *p : people){
-        tempPeople.push_back(p); 
-    }
-    db.saveToDatabase(tempPeople); 
+QPushButton* MainWindow::createButton(const QString& text, std::function<void()> callback) {
+    QPushButton* button = new QPushButton(text, this);
+    connect(button, &QPushButton::clicked, callback);
+    button->setStyleSheet(
+        "QPushButton {"
+            "background-color: lightgray;"
+            "color: black;"
+            "font-size: 16px;"
+            "padding: 8px 16px;"
+            "min-height: 40px;"
+        "}"
+    );
+    button->setFixedWidth(this->width() / 4); 
+    button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    return button;
 }
 QLineEdit* MainWindow::createLineEdit(const QString& placeholder) {
     QLineEdit* lineEdit = new QLineEdit(this);
     if (!placeholder.isEmpty()) {
         lineEdit->setPlaceholderText(placeholder);
     }
+    lineEdit->setStyleSheet(
+        "QLineEdit {"
+            "background-color: lightgray;"
+            "color: black;"
+            "font-size: 16px;"
+            "padding: 8px;"
+            "min-height: 40px;"
+        "}"
+    );
+    lineEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    lineEdit->setFixedWidth(this->width() / 4); 
     return lineEdit;
-}
-QPushButton* MainWindow::createButton(const QString& text, std::function<void()> callback) {
-    QPushButton* button = new QPushButton(text, this);
-    QObject::connect(button, &QPushButton::clicked, callback);
-    return button;
 }
 void MainWindow::addNewClient() {
     clearLayout(mainLayout);
-    outputLabel->setText("Choose client type:");
+    outputLabel->setText("");
     mainLayout->addWidget(createButton("User", [this]() { createUser(); }));
     mainLayout->addWidget(createButton("Specialist", [this]() { createSpecialist(); }));
-    mainLayout->addWidget(createButton("Admin", [this]() { createAdmin(); }));
     mainLayout->addWidget(createButton("Back", [this]() { mainMenu(); }));
 }
 void MainWindow::createPersonInputForm(const QString& type) {
     clearLayout(mainLayout);
-    outputLabel->setText("Creating a new " + type + ":");
+    QLabel* createLabel = new QLabel("Creating a new " + type + ":", this);
+    createLabel->setStyleSheet("QLabel { color: black; font-size: 18px; qproperty-alignment: AlignCenter; }");
+    mainLayout->addWidget(createLabel);
     QLineEdit* firstNameEdit = createLineEdit("First Name");
     QLineEdit* lastNameEdit = createLineEdit("Last Name");
     QLineEdit* passwordEdit = createLineEdit("Password");
@@ -147,36 +120,121 @@ void MainWindow::createPersonInputForm(const QString& type) {
     auto createPerson = [this, type, firstNameEdit, lastNameEdit, passwordEdit, countryEdit,
                          regionEdit, cityEdit, streetEdit, houseEdit, apartmentEdit, contactEdit,
                          specializationEdit, certificationsEdit]() {
-        Address address(countryEdit->text().toStdString(), regionEdit->text().toStdString(),
-                        cityEdit->text().toStdString(), streetEdit->text().toStdString(),
-                        houseEdit->text().toStdString(), apartmentEdit->text().toStdString());
-        Person* person = nullptr;
-        if (type == "User") {
-            person = new User(firstNameEdit->text().toStdString(), lastNameEdit->text().toStdString(),
-                              passwordEdit->text().toStdString(), address, contactEdit->text().toStdString());
-        } else if (type == "Specialist") {
-            QStringList certificationsList = certificationsEdit->text().split(",");
-            std::vector<std::string> certifications;
-            for (const QString& cert : certificationsList) {
-                certifications.push_back(cert.trimmed().toStdString());
+        try {
+            if (!areAllFieldsFilled(firstNameEdit, lastNameEdit, passwordEdit, countryEdit, regionEdit, cityEdit, streetEdit, houseEdit, apartmentEdit, contactEdit, specializationEdit, certificationsEdit)) {
+                throw EmptyFieldException("Please fill in all fields.");
             }
-            person = new Specialist(firstNameEdit->text().toStdString(), lastNameEdit->text().toStdString(),
-                                    passwordEdit->text().toStdString(), address, contactEdit->text().toStdString(),
-                                    specializationEdit->text().toStdString(), certifications);
-        } else if (type == "Admin") {
-            person = new Admin(firstNameEdit->text().toStdString(), lastNameEdit->text().toStdString(),
-                              passwordEdit->text().toStdString());
-        }
-        if (person != nullptr) {
-            people.add(person);
-            saveToDatabase();
-            clearLayout(mainLayout);
-            outputLabel->setText(type + " created successfully!");
-            mainLayout->addWidget(createButton("Back", [this]() { mainMenu(); }));
+            Address address(countryEdit->text().toStdString(), regionEdit->text().toStdString(),
+                            cityEdit->text().toStdString(), streetEdit->text().toStdString(),
+                            houseEdit->text().toStdString(), apartmentEdit->text().toStdString());
+            Person* person = nullptr;
+            try {
+                if (!db.isPasswordUnique(passwordEdit->text().toStdString())) {
+                    throw PasswordNotUniqueException("Password already exists. Please choose a different password.");
+                }
+                if (type == "User") {
+                    person = new User(firstNameEdit->text().toStdString(), lastNameEdit->text().toStdString(),
+                                      passwordEdit->text().toStdString(), address, contactEdit->text().toStdString());
+                } else if (type == "Specialist") {
+                    QStringList certificationsList = certificationsEdit->text().split(",");
+                    std::vector<std::string> certifications;
+                    for (const QString& cert : certificationsList) {
+                        certifications.push_back(cert.trimmed().toStdString());
+                    }
+                    person = new Specialist(firstNameEdit->text().toStdString(), lastNameEdit->text().toStdString(),
+                                            passwordEdit->text().toStdString(), address, contactEdit->text().toStdString(),
+                                            specializationEdit->text().toStdString(), certifications);
+                }
+                if (person != nullptr) {
+                    people.add(person);
+                    saveToDatabase();
+                    clearLayout(mainLayout);
+                    outputLabel->clear();
+                    outputLabel->setText(type + " created successfully!");
+                    mainLayout->addWidget(outputLabel);
+                    mainLayout->addWidget(createButton("Back", [this]() { mainMenu(); }));
+                }
+            } catch (const PasswordNotUniqueException& e) {
+                QMessageBox::warning(this, "Error", e.what());
+                delete person;
+                person = nullptr;
+                return;
+            } catch (const std::exception& e) {
+                QMessageBox::warning(this, "Error", e.what());
+                delete person;
+                person = nullptr;
+                return;
+            }
+        } catch (const EmptyFieldException& e) {
+            QMessageBox::warning(this, "Error", e.what());
         }
     };
     mainLayout->addWidget(createButton("Create", createPerson));
     mainLayout->addWidget(createButton("Back", [this]() { addNewClient(); }));
+}
+void MainWindow::displayClientDetailsInList(Person* person, QListWidget* listWidget) {
+    listWidget->clear();
+    std::stringstream ss;
+    ss << *person;
+    QStringList lines = QString::fromStdString(ss.str()).split('\n');
+    for (const QString& line : lines) {
+        new QListWidgetItem(line, listWidget);
+    }
+    listWidget->setStyleSheet("QListWidget { font-size: 16px; min-width: 200px; background-color: white; }");
+}
+void MainWindow::paintEvent(QPaintEvent *event) {
+    Q_UNUSED(event); 
+}
+MainWindow::~MainWindow() {
+    saveToDatabase();
+    for (Person* p : people) {
+        delete p;
+    }
+}
+void MainWindow::mainMenu() {
+    clearLayout(mainLayout);
+    Person* loggedInUser = getLoggedInUser();
+    Admin* admin = dynamic_cast<Admin*>(loggedInUser);
+    if (admin) {
+        mainLayout->addWidget(createButton("Display All Clients", [this]() { displayAllClients(); }));
+        mainLayout->addWidget(createButton("Find Info By Client Name", [this]() { findInfoByClientName(); }));
+    } else {
+        createMainMenuButtons();
+    }
+}
+void MainWindow::createMainMenuButtons() {
+    mainLayout->addWidget(createButton("Add New Client", [this]() { addNewClient(); }));
+    mainLayout->addWidget(createButton("Login", [this]() { login(); }));
+}
+void MainWindow::clearLayout(QLayout* layout) {
+    QLayoutItem *child;
+    while ((child = layout->takeAt(0)) != 0) {
+        if (child->widget() != nullptr && child->widget() != outputLabel) {
+            delete child->widget();
+        }
+        delete child;
+    }
+    if (layout->parent()) {
+        layout->parentWidget()->setStyleSheet("background-color: white;");
+    }
+    mainLayout->setAlignment(Qt::AlignCenter);  
+}
+void MainWindow::loadFromDatabase() {
+    for (Person* p : people) {
+        delete p;
+    }
+    people.clear();
+    std::vector<Person*> tempPeople = db.loadFromDatabase();
+    for (Person* p : tempPeople) {
+        people.add(p);
+    }
+}
+void MainWindow::saveToDatabase() {
+    std::vector<Person*> tempPeople;
+    for (Person* p : people) {
+        tempPeople.push_back(p);
+    }
+    db.saveToDatabase(tempPeople);
 }
 void MainWindow::createUser() {
     createPersonInputForm("User");
@@ -184,14 +242,11 @@ void MainWindow::createUser() {
 void MainWindow::createSpecialist() {
     createPersonInputForm("Specialist");
 }
-void MainWindow::createAdmin() {
-    createPersonInputForm("Admin");
-}
 void MainWindow::displayAllClients() {
     loadFromDatabase();
     clearLayout(mainLayout);
     QListWidget* clientList = new QListWidget(this);
-    clientList->setStyleSheet("background-color: lightblue; color: white;");
+    clientList->setStyleSheet("background-color: white; color: black;");
     for (const Person* person : people) {
         std::stringstream ss;
         ss << person->getFirstName() << " " << person->getLastName() << "\n";
@@ -240,19 +295,18 @@ void MainWindow::displayAllClients() {
                     }
                 }
             }
-        } else if (const Admin* admin = dynamic_cast<const Admin*>(person)) {
-            const auto& privileges = admin->getPrivileges();
-            if (!privileges.empty()) {
-                for (const std::string& privilege : privileges) {
-                    ss << "      Privilege: " << privilege << "\n";
-                }
-            }
         }
         new QListWidgetItem(QString::fromStdString(ss.str()), clientList);
     }
     QObject::connect(clientList, &QListWidget::itemClicked, this, &MainWindow::displayClientDetails);
     mainLayout->addWidget(clientList);
-    mainLayout->addWidget(createButton("Back", [this]() { mainMenu(); }));
+    mainLayout->addWidget(createButton("Back", [this]() {
+        if (loggedInUser) {
+            handleLogin(loggedInUser);
+        } else {
+            mainMenu();
+        }
+    }));
 }
 void MainWindow::displayClientDetails(QListWidgetItem* item) {
     QString clientName = item->text();
@@ -273,6 +327,9 @@ void MainWindow::displayClientDetails(QListWidgetItem* item) {
         }
         if (found) {
             clearLayout(mainLayout);
+            QTextEdit* detailsTextEdit = new QTextEdit(this);
+            detailsTextEdit->setReadOnly(true);
+            detailsTextEdit->setStyleSheet("background-color: lightblue; color: white;");
             std::stringstream ss;
             ss << "First name: " << foundPerson->getFirstName() << std::endl;
             ss << "Last name: " << foundPerson->getLastName() << std::endl;
@@ -284,18 +341,37 @@ void MainWindow::displayClientDetails(QListWidgetItem* item) {
             ss << "  Street: " << foundPerson->getAddress().getStreet() << std::endl;
             ss << "  House: " << foundPerson->getAddress().getHouse() << std::endl;
             ss << "  Apartment: " << foundPerson->getAddress().getApartment() << std::endl;
-            QWidget* infoContainer = new QWidget(this);
-            infoContainer->setStyleSheet("background-color: lightblue;");
-            QVBoxLayout* infoLayout = new QVBoxLayout(infoContainer);
-            infoLayout->addWidget(new QLabel("User Information:", this));
-            QLabel* userInfoLabel = new QLabel(QString::fromStdString(ss.str()), this);
-            userInfoLabel->setStyleSheet("color: white;");
-            userInfoLabel->setWordWrap(true);
-            infoLayout->addWidget(userInfoLabel);
-            int screenHeight = QGuiApplication::primaryScreen()->availableGeometry().height();
-            infoContainer->setMaximumHeight(screenHeight / 2);
-            infoContainer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-            mainLayout->addWidget(infoContainer, 0, Qt::AlignCenter);
+            if (const User* user = dynamic_cast<const User*>(foundPerson)) {
+                ss << "Contact Info: " << user->getContactInfo() << std::endl;
+                if (!user->getRatings().empty()) {
+                    double avgRating = user->getAverageRating();
+                    ss << "Average Rating: " << std::fixed << std::setprecision(1) << avgRating << std::endl;
+                    for (int rating : user->getRatings()) {
+                        ss << "Individual Rating: " << rating << std::endl;
+                    }
+                }
+                for (const std::string& review : user->getReviews()) {
+                    ss << "Review: " << review << std::endl;
+                }
+            } else if (const Specialist* specialist = dynamic_cast<const Specialist*>(foundPerson)) {
+                ss << "Contact Info: " << specialist->getContactInfo() << std::endl;
+                ss << "Specialization: " << specialist->getSpecialization() << std::endl;
+                for (const std::string& cert : specialist->getCertifications()) {
+                    ss << "Certification: " << cert << std::endl;
+                }
+                if (!specialist->getRatings().empty()) {
+                    double avgRating = specialist->getAverageRating();
+                    ss << "Average Rating: " << std::fixed << std::setprecision(1) << avgRating << std::endl;
+                    for (int rating : specialist->getRatings()) {
+                        ss << "Individual Rating: " << rating << std::endl;
+                    }
+                }
+                for (const std::string& review : specialist->getReviews()) {
+                    ss << "Review: " << review << std::endl;
+                }
+            }
+            detailsTextEdit->setPlainText(QString::fromStdString(ss.str()));
+            mainLayout->addWidget(detailsTextEdit);
             mainLayout->addWidget(createButton("Back", [this]() { displayAllClients(); }));
         } else {
             clearLayout(mainLayout);
@@ -307,13 +383,9 @@ void MainWindow::displayClientDetails(QListWidgetItem* item) {
 void MainWindow::findInfoByClientName() {
     clearLayout(mainLayout);
     outputLabel->setText("Enter client's first name:");
-    QSpacerItem* spacer = new QSpacerItem(100, 100, QSizePolicy::Minimum, QSizePolicy::Fixed);
-    mainLayout->addItem(spacer);
     QLineEdit* firstNameEdit = createLineEdit();
     mainLayout->addWidget(firstNameEdit);
     mainLayout->addWidget(new QLabel("Enter client's last name:", this));
-    QSpacerItem* spacerLow = new QSpacerItem(100, 100, QSizePolicy::Minimum, QSizePolicy::Fixed);
-    mainLayout->addItem(spacerLow);
     QLineEdit* lastNameEdit = createLineEdit();
     mainLayout->addWidget(lastNameEdit);
     mainLayout->addWidget(createButton("Search", [this, firstNameEdit, lastNameEdit]() {
@@ -333,112 +405,131 @@ void MainWindow::findInfoByClientName() {
                 throw UserNotFoundException("User not found.");
             }
             clearLayout(mainLayout);
+            QTextEdit* detailsTextEdit = new QTextEdit(this);
+            detailsTextEdit->setReadOnly(true);
+            detailsTextEdit->setStyleSheet("background-color: lightblue; color: white;");
             std::stringstream ss;
-            ss << "First name: " << foundPerson->getFirstName() << std::endl;
-            ss << "Last name: " << foundPerson->getLastName() << std::endl;
-            if (const User* user = dynamic_cast<const User*>(foundPerson)) {
-                ss << "Address: " << user->getAddress().getCountry() << ", " << user->getAddress().getRegion() << ", " << user->getAddress().getCity() << ", " << user->getAddress().getStreet() << ", " << user->getAddress().getHouse() << ", " << user->getAddress().getApartment() << std::endl;
-                if (user->getAverageRating() > 0) {
-                    ss << "Rating: " << user->getAverageRating() << std::endl;
+            ss << *foundPerson;
+            detailsTextEdit->setPlainText(QString::fromStdString(ss.str()));
+            mainLayout->addWidget(detailsTextEdit);
+            mainLayout->addWidget(createButton("Back", [this]() {
+                if (loggedInUser && dynamic_cast<Admin*>(loggedInUser)) {
+                    handleLogin(loggedInUser);
+                } else {
+                    mainMenu();
                 }
-                for (const std::string& review : user->getReviews()) {
-                    ss << "Review: " << review << std::endl;
-                }
-                ss << "Contact Info: " << user->getContactInfo() << std::endl;
-            }
-            if (const Specialist* specialist = dynamic_cast<const Specialist*>(foundPerson)) {
-                ss << "Specialization: " << specialist->getSpecialization() << std::endl;
-                for (const auto& cert : specialist->getCertifications()) {
-                    ss << "Certification: " << cert << std::endl;
-                }
-            }
-            if (const Admin* admin = dynamic_cast<const Admin*>(foundPerson)) {
-                for (const std::string& privilege : admin->getPrivileges()) {
-                    ss << "Privilege: " << privilege << std::endl;
-                }
-            }
-            outputLabel->setText(QString::fromStdString(ss.str()));
+            }));
         } catch (const UserNotFoundException& ex) {
             QMessageBox::warning(this, "Error", ex.what());
+            mainLayout->addWidget(createButton("Back", [this]() { findInfoByClientName(); }));
         }
-        mainLayout->addWidget(createButton("Back", [this]() { findInfoByClientName(); }));
     }));
-    mainLayout->addWidget(createButton("Back", [this]() { mainMenu(); }));
+    mainLayout->addWidget(createButton("Back", [this]() {
+        if (loggedInUser && dynamic_cast<Admin*>(loggedInUser)) {
+            handleLogin(loggedInUser);
+        } else {
+            mainMenu();
+        }
+    }));
 }
 void MainWindow::login() {
     clearLayout(mainLayout);
     outputLabel->setText("Enter your first name:");
-    QSpacerItem* spacer = new QSpacerItem(100, 100, QSizePolicy::Minimum, QSizePolicy::Fixed);
-    mainLayout->addItem(spacer);
     QLineEdit* firstNameEdit = createLineEdit();
+    mainLayout->addWidget(outputLabel);
     mainLayout->addWidget(firstNameEdit);
-    mainLayout->addWidget(new QLabel("Enter your last name:", this));
+    QLabel* lastNameLabel = new QLabel("Enter your last name:", this);
+    lastNameLabel->setAlignment(Qt::AlignCenter);
     QLineEdit* lastNameEdit = createLineEdit();
+    mainLayout->addWidget(lastNameLabel);
     mainLayout->addWidget(lastNameEdit);
     mainLayout->addWidget(createButton("Login", [this, firstNameEdit, lastNameEdit]() {
-         QString firstName = firstNameEdit->text();
-         QString lastName = lastNameEdit->text();
-         try {
-             for (Person* person : people) {
-                 if (QString::fromStdString(person->getFirstName()) == firstName &&
-                     QString::fromStdString(person->getLastName()) == lastName) {
-                     bool ok;
-                     QString password = QInputDialog::getText(this, "Login", "Enter password:",
-                                                             QLineEdit::Password, QString(), &ok);
-                     if (ok) {
-                         if (QString::fromStdString(person->getPassword()) == password) {
-                             handleLogin(person);
-                             return;
-                         } else {
-                             throw IncorrectPasswordException("Incorrect password.");
-                         }
-                     } else {
+        QString firstName = firstNameEdit->text();
+        QString lastName = lastNameEdit->text();
+        try {
+            for (Person* person : people) {
+                if (QString::fromStdString(person->getFirstName()) == firstName &&
+                    QString::fromStdString(person->getLastName()) == lastName) {
+                    bool ok;
+                    QString password = QInputDialog::getText(this, "Login", "Enter password:",
+                                                           QLineEdit::Password, QString(), &ok);
+                    if (ok) {
+                        if (QString::fromStdString(person->getPassword()) == password) {
+                            handleLogin(person);
+                            return;
+                        } else {
+                            throw IncorrectPasswordException("Incorrect password.");
+                        }
+                    } else {
                         return;
-                     }
-                 }
-             }
-             throw UserNotFoundException("User not found.");
-         } catch (const UserNotFoundException& ex) {
-             QMessageBox::warning(this, "Login Error", ex.what());
-         } catch (const IncorrectPasswordException& ex) {
-             QMessageBox::warning(this, "Login Error", ex.what());
-         }
-     }));
+                    }
+                }
+            }
+            throw UserNotFoundException("User not found.");
+        } catch (const UserNotFoundException& ex) {
+            QMessageBox::warning(this, "Login Error", ex.what());
+        } catch (const IncorrectPasswordException& ex) {
+            QMessageBox::warning(this, "Login Error", ex.what());
+        }
+    }));
     mainLayout->addWidget(createButton("Back", [this]() { mainMenu(); }));
+    mainLayout->setAlignment(Qt::AlignCenter); 
 }
 Person* MainWindow::getLoggedInUser() const {
     return loggedInUser;
 }
 void MainWindow::handleLogin(Person* person) {
-    clearLayout(mainLayout);
+    clearLayout(mainLayout); 
     loggedInUser = person;
-    QString profile = "Welcome, " + QString::fromStdString(person->getFirstName()) + "!\n\n";
+    outputLabel->clear();
     User* user = dynamic_cast<User*>(person);
     Specialist* specialist = dynamic_cast<Specialist*>(person);
     Admin* admin = dynamic_cast<Admin*>(person);
-    mainLayout->addWidget(createButton("View Profile", [this, person, profile]() {
-        clearLayout(mainLayout);
-        std::stringstream ss;
-        ss << person;
-        outputLabel->setText(profile + QString::fromStdString(ss.str()));
-        mainLayout->addWidget(createButton("Back", [this, person]() { handleLogin(person); }));
-    }));
-    mainLayout->addWidget(createButton("Edit Profile", [this, person]() { editProfile(person); }));
-    mainLayout->addWidget(createButton("Delete Account", [this, person]() { deleteAccount(person); }));
+    QListWidget* profileList = new QListWidget(this);
+    profileList->setStyleSheet("QListWidget { font-size: 16px; min-width: 200px; background-color: white; }");
+    profileList->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
+    QWidget* buttonWidget = new QWidget(this);
+    QVBoxLayout* buttonLayout = new QVBoxLayout(buttonWidget);
+    buttonLayout->setAlignment(Qt::AlignCenter);
+    buttonLayout->setContentsMargins(0, 0, 0, 0); 
+    buttonLayout->setSpacing(15); 
+    buttonLayout->addStretch(1); 
+    if (user || specialist) {
+        buttonLayout->addWidget(createButton("View Profile", [this, person, profileList]() { displayClientDetailsInList(person, profileList); }));
+        buttonLayout->addWidget(createButton("Edit Profile", [this, person]() { editProfile(person); }));
+        buttonLayout->addWidget(createButton("Delete Account", [this, person]() { deleteAccount(person); }));
+    }
     if (user) {
-        mainLayout->addWidget(createButton("Rate and Review Specialist", [this, user]() { rateAndReviewSpecialist(user); }));
-        mainLayout->addWidget(createButton("Find Specialist", [this, user]() { generateReport(user); }));
+        buttonLayout->addWidget(createButton("Rate and Review Specialist", [this, user]() { rateAndReviewSpecialist(user); }));
+        buttonLayout->addWidget(createButton("Find Specialist", [this, user]() { generateReport(user); }));
     } else if (specialist) {
-        mainLayout->addWidget(createButton("Rate and Review User", [this, specialist]() { rateAndReviewUser(specialist); }));
-    } else if (admin) {
-        mainLayout->addWidget(createButton("Delete User by Name", [this, admin]() { deleteUserByName(admin); }));
-        profile += "Admin Privileges:\n";
-        for (const auto& privilege : admin->getPrivileges()) {
-            profile += QString::fromStdString(privilege) + "\n";
+        buttonLayout->addWidget(createButton("Rate and Review User", [this, specialist]() { rateAndReviewUser(specialist); }));
+    }
+    if (admin) {
+        buttonLayout->addWidget(createButton("Delete User by Name", [this, admin]() { deleteUserByName(admin); }));
+        buttonLayout->addWidget(createButton("Display All Clients", [this]() { displayAllClients(); }));
+        buttonLayout->addWidget(createButton("Find Info By Client Name", [this]() { findInfoByClientName(); }));
+    }
+    buttonLayout->addWidget(createButton("Logout", [this]() { logout(); }));
+    buttonLayout->addStretch(1); 
+    mainLayout->addWidget(buttonWidget);         
+    mainLayout->addWidget(profileList);
+    this->setStyleSheet("background-color: white;");
+}
+void MainWindow::resizeEvent(QResizeEvent* event) {
+    QWidget::resizeEvent(event);
+    int buttonWidth = this->width() / 4;
+    for (QObject* child : this->children()) {
+        if (QPushButton* button = qobject_cast<QPushButton*>(child)) {
+            button->setFixedWidth(buttonWidth);
+        } else if (QLineEdit* lineEdit = qobject_cast<QLineEdit*>(child)) {
+            lineEdit->setFixedWidth(buttonWidth);
+        } else if (QListWidget *listWidget = qobject_cast<QListWidget*>(child)) {
+            listWidget->setFixedWidth(buttonWidth);
+        } else if (QTextEdit *textEdit = qobject_cast<QTextEdit*>(child)) {
+            textEdit->setFixedWidth(buttonWidth);
         }
     }
-    outputLabel->setText(profile);
-    mainLayout->addWidget(createButton("Logout", [this]() { logout(); }));
 }
 void MainWindow::editProfile(Person* person) {
     clearLayout(mainLayout);
@@ -450,130 +541,184 @@ void MainWindow::editProfile(Person* person) {
     mainLayout->addWidget(lastNameEdit);
     mainLayout->addWidget(passwordEdit);
     auto saveChanges = [this, person, firstNameEdit, lastNameEdit, passwordEdit]() {
-        person->setFirstName(firstNameEdit->text().toStdString());
-        person->setLastName(lastNameEdit->text().toStdString());
-        if (!passwordEdit->text().isEmpty()) {
-            person->setPassword(passwordEdit->text().toStdString());
+        try {
+            if (!db.isPasswordUnique(passwordEdit->text().toStdString()) && !passwordEdit->text().isEmpty()) {
+                throw PasswordNotUniqueException("Password already exists. Please choose a different one.");
+            }
+            if (firstNameEdit->text().isEmpty() || lastNameEdit->text().isEmpty()) {
+                throw EmptyFieldException("Name fields must not be empty.");
+            }
+            person->setFirstName(firstNameEdit->text().toStdString());
+            person->setLastName(lastNameEdit->text().toStdString());
+            if (!passwordEdit->text().isEmpty()) {
+                person->setPassword(passwordEdit->text().toStdString());
+            }
+            saveToDatabase();
+            clearLayout(mainLayout);
+            outputLabel->setText("Profile updated successfully!");
+            if (Admin* admin = dynamic_cast<Admin*>(person)) {
+                handleLogin(admin);
+            } else {
+                handleLogin(person);
+            }
+        } catch (const PasswordNotUniqueException& ex) {
+            QMessageBox::warning(this, "Error", ex.what());
+        } catch (const EmptyFieldException& ex) {
+            QMessageBox::warning(this, "Error", ex.what());
         }
-        saveToDatabase();
-        clearLayout(mainLayout);
-        outputLabel->setText("Profile updated successfully!");
-        mainLayout->addWidget(createButton("Back", [this, person]() { handleLogin(person); }));
     };
     mainLayout->addWidget(createButton("Save Changes", saveChanges));
     mainLayout->addWidget(createButton("Back", [this, person]() { handleLogin(person); }));
 }
 void MainWindow::deleteAccount(Person* person) {
     clearLayout(mainLayout);
-    outputLabel->setText("Are you sure you want to delete your account?");
-    mainLayout->addWidget(createButton("Confirm", [this, person]() {
+    QLabel* questionLabel = new QLabel("Are you sure you want to delete your account?", this);
+   questionLabel->setStyleSheet("QLabel { color: black; font-size: 10px; qproperty-alignment: AlignCenter; }"); 
+    mainLayout->addWidget(questionLabel);
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, "Delete Account", questionLabel->text(), QMessageBox::Yes | QMessageBox::No);
+    if (reply == QMessageBox::Yes) {
         for (auto it = people.begin(); it != people.end(); ++it) {
             if (*it == person) {
                 delete *it;
                 people.remove(person);
                 saveToDatabase();
-                clearLayout(mainLayout);
-                outputLabel->setText("Account deleted successfully.");
-                mainLayout->addWidget(createButton("Back", [this]() { mainMenu(); }));
+                loggedInUser = nullptr;
+                mainMenu();  
                 return;
             }
         }
-    }));
-    mainLayout->addWidget(createButton("Cancel", [this, person]() { handleLogin(person); }));
+    } else {
+        handleLogin(person);
+    }
 }
+
 void MainWindow::rateAndReviewUser(Specialist* specialist) {
     clearLayout(mainLayout);
     outputLabel->setText("Rate and review a user:");
+
     QLineEdit* userFirstNameEdit = createLineEdit("User First Name");
     QLineEdit* userLastNameEdit = createLineEdit("User Last Name");
     QLineEdit* ratingEdit = createLineEdit("Rating (1-5)");
     QLineEdit* reviewEdit = createLineEdit("Review");
+
     mainLayout->addWidget(userFirstNameEdit);
     mainLayout->addWidget(userLastNameEdit);
     mainLayout->addWidget(ratingEdit);
     mainLayout->addWidget(reviewEdit);
+
     auto submitReview = [this, specialist, userFirstNameEdit, userLastNameEdit, ratingEdit, reviewEdit]() {
         QString userFirstName = userFirstNameEdit->text();
         QString userLastName = userLastNameEdit->text();
+
         loadFromDatabase();
+
         bool userFound = false;
         User* foundUser = nullptr;
+
         for (Person* p : people) {
-            User* u = dynamic_cast<User*>(p);
-            if (u && QString::fromStdString(u->getFirstName()) == userFirstName && QString::fromStdString(u->getLastName()) == userLastName) {
+            foundUser = dynamic_cast<User*>(p);
+            if (foundUser && QString::fromStdString(foundUser->getFirstName()) == userFirstName && QString::fromStdString(foundUser->getLastName()) == userLastName) {
                 userFound = true;
-                foundUser = u;
                 break;
             }
         }
+
         if (!userFound) {
             QMessageBox::warning(this, "Error", "User not found.");
             return;
         }
+
         if (foundUser) {
             bool ok;
             int rating = ratingEdit->text().toInt(&ok);
             if (ok && rating >= 1 && rating <= 5) {
                 foundUser->addRating(rating);
                 foundUser->addReview(reviewEdit->text().toStdString());
+
                 saveToDatabase();
+                loadFromDatabase();
+
                 clearLayout(mainLayout);
-                outputLabel->setText("Rating and review submitted successfully!");
-                mainLayout->addWidget(createButton("Back", [this, specialist]() { handleLogin(specialist); }));
+                QLabel* successLabel = new QLabel("Rating and review submitted successfully!", this);
+                successLabel->setStyleSheet("QLabel { color: black; font-size: 18px; qproperty-alignment: AlignCenter; }");
+                mainLayout->addWidget(successLabel);
+                mainLayout->addWidget(createButton("Back", [this]() { handleLogin(loggedInUser); }));
+                this->update();
             } else {
                 QMessageBox::warning(this, "Error", "Invalid rating. Please enter a number between 1 and 5.");
             }
         }
     };
+
     mainLayout->addWidget(createButton("Submit", submitReview));
-    mainLayout->addWidget(createButton("Back", [this, specialist]() { handleLogin(specialist); }));
+    mainLayout->addWidget(createButton("Back", [this]() { handleLogin(loggedInUser); }));
 }
+
+
 void MainWindow::rateAndReviewSpecialist(User* user) {
     clearLayout(mainLayout);
     outputLabel->setText("Rate and review a specialist:");
+
     QLineEdit* specialistFirstNameEdit = createLineEdit("Specialist First Name");
     QLineEdit* specialistLastNameEdit = createLineEdit("Specialist Last Name");
     QLineEdit* ratingEdit = createLineEdit("Rating (1-5)");
     QLineEdit* reviewEdit = createLineEdit("Review");
+
     mainLayout->addWidget(specialistFirstNameEdit);
     mainLayout->addWidget(specialistLastNameEdit);
     mainLayout->addWidget(ratingEdit);
     mainLayout->addWidget(reviewEdit);
+
     auto submitReview = [this, user, specialistFirstNameEdit, specialistLastNameEdit, ratingEdit, reviewEdit]() {
         QString specialistFirstName = specialistFirstNameEdit->text();
         QString specialistLastName = specialistLastNameEdit->text();
+
+        loadFromDatabase();
+
         bool specialistFound = false;
-        Specialist *foundSpecialist = nullptr;
-        for(Person *p : people) {
-            Specialist *s = dynamic_cast<Specialist*>(p);
-            if (s && QString::fromStdString(s->getFirstName()) == specialistFirstName && QString::fromStdString(s->getLastName()) == specialistLastName){
+        Specialist* foundSpecialist = nullptr;
+
+        for (Person* p : people) {
+            foundSpecialist = dynamic_cast<Specialist*>(p);
+            if (foundSpecialist && QString::fromStdString(foundSpecialist->getFirstName()) == specialistFirstName &&
+                QString::fromStdString(foundSpecialist->getLastName()) == specialistLastName) {
                 specialistFound = true;
-                foundSpecialist = s;
                 break;
             }
         }
+
         if (!specialistFound) {
             QMessageBox::warning(this, "Error", "Specialist not found.");
             return;
         }
+
         if (foundSpecialist) {
             bool ok;
             int rating = ratingEdit->text().toInt(&ok);
             if (ok && rating >= 1 && rating <= 5) {
                 foundSpecialist->addRating(rating);
                 foundSpecialist->addReview(reviewEdit->text().toStdString());
+
                 saveToDatabase();
+                loadFromDatabase();
                 clearLayout(mainLayout);
-                outputLabel->setText("Rating and review submitted successfully!");
-                mainLayout->addWidget(createButton("Back", [this, user]() { handleLogin(user); }));
+
+                QLabel* successLabel = new QLabel("Rating and review submitted successfully!", this);
+                successLabel->setStyleSheet("QLabel { color: black; font-size: 18px; qproperty-alignment: AlignCenter; }");
+                mainLayout->addWidget(successLabel);
+                mainLayout->addWidget(createButton("Back", [this]() { handleLogin(loggedInUser); }));
+                this->update();
             } else {
                 QMessageBox::warning(this, "Error", "Invalid rating. Please enter a number between 1 and 5.");
             }
         }
     };
+
     mainLayout->addWidget(createButton("Submit", submitReview));
-    mainLayout->addWidget(createButton("Back", [this, user]() { handleLogin(user); }));
+    mainLayout->addWidget(createButton("Back", [this]() { handleLogin(loggedInUser); }));
 }
+
 void MainWindow::deleteUserByName(Admin* admin) {
     clearLayout(mainLayout);
     outputLabel->setText("Enter client's first name:");
@@ -585,45 +730,29 @@ void MainWindow::deleteUserByName(Admin* admin) {
     QPushButton* deleteButton = createButton("Delete", [this, firstNameEdit, lastNameEdit, admin]() {
         QString firstName = firstNameEdit->text();
         QString lastName = lastNameEdit->text();
-        auto it = people.begin();
-        int index = 0;
         bool userFound = false;
-        for (; it != people.end(); ++it, index++) {
+        for (auto it = people.begin(); it != people.end(); ++it) {
             if (QString::fromStdString((*it)->getFirstName()) == firstName && QString::fromStdString((*it)->getLastName()) == lastName) {
+                people.remove(*it);
                 userFound = true;
                 break;
             }
         }
         if (userFound) {
-            delete people[index];
-            people.remove(*it);
             saveToDatabase();
             clearLayout(mainLayout);
             outputLabel->setText("User deleted successfully.");
+            mainLayout->addWidget(createButton("Back", [this, admin]() { handleLogin(admin); }));
         } else {
             clearLayout(mainLayout);
             outputLabel->setText("User not found.");
+            mainLayout->addWidget(createButton("Back", [this, admin]() { handleLogin(admin); }));
         }
-        mainLayout->addWidget(createButton("Back", [this, admin]() { deleteUserByName(admin); }));
     });
     mainLayout->addWidget(deleteButton);
     mainLayout->addWidget(createButton("Back", [this, admin]() { handleLogin(admin); }));
 }
-std::vector<Specialist*> MainWindow::findMatchingSpecialists(User* user, const std::string& specialization) {
-    std::vector<Specialist*> matchingSpecialists;
-    for (size_t i = 0; i < people.size(); ++i) {
-        Specialist* specialist = dynamic_cast<Specialist*>(people[i]);
-        if (specialist && specializationMatches(specialist->getSpecialization(), specialization) && addressMatches(user->getAddress(), specialist->getAddress())) {
-            matchingSpecialists.push_back(specialist);
-        }
-    }
-    return matchingSpecialists;
-}
-void MainWindow::logout() {
-    loggedInUser = nullptr;
-    mainMenu();
-}
-void MainWindow::generateReport(User *user) {
+void MainWindow::generateReport(User* user) {
     clearLayout(mainLayout);
     outputLabel->setText("Generate Specialist Report:");
     QLineEdit* specializationEdit = createLineEdit("Specialization");
@@ -631,15 +760,15 @@ void MainWindow::generateReport(User *user) {
     mainLayout->addWidget(createButton("Generate report", [this, user, specializationEdit]() {
         std::string specialization = specializationEdit->text().toStdString();
         ReportGenerator reportGenerator;
-        std::vector<Specialist*> matchingSpecialists = findMatchingSpecialists(user, specialization); 
+        std::vector<Specialist*> matchingSpecialists = findMatchingSpecialists(user, specialization);
         QString report = QString::fromStdString(reportGenerator.generateXMLReport(matchingSpecialists));
         QTextEdit* reportTextEdit = new QTextEdit(this);
         reportTextEdit->setPlainText(report);
         reportTextEdit->setReadOnly(true);
         clearLayout(mainLayout);
         mainLayout->addWidget(reportTextEdit);
-        mainLayout->addWidget(createButton("Save Report", [report]() {
-            QString fileName = QFileDialog::getSaveFileName(nullptr, "Save Report", "", "XML Files (*.xml);;All Files (*)");
+        mainLayout->addWidget(createButton("Save Report", [report, this]() {
+            QString fileName = QFileDialog::getSaveFileName(nullptr, "Save Report", "", "XML Files (.xml);;All Files ()");
             if (!fileName.isEmpty()) {
                 QFile file(fileName);
                 if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -652,6 +781,17 @@ void MainWindow::generateReport(User *user) {
         mainLayout->addWidget(createButton("Back", [this, user]() { handleLogin(user); }));
     }));
     mainLayout->addWidget(createButton("Back", [this, user]() { handleLogin(user); }));
+}
+std::vector<Specialist*> MainWindow::findMatchingSpecialists(User* user, const std::string& specialization) {
+    std::vector<Specialist*> matchingSpecialists;
+    for (Person* p : people) {
+        Specialist* specialist = dynamic_cast<Specialist*>(p);
+        if (specialist && specializationMatches(specialist->getSpecialization(), specialization) &&
+            addressMatches(user->getAddress(), specialist->getAddress())) {
+            matchingSpecialists.push_back(specialist);
+            }
+    }
+    return matchingSpecialists;
 }
 bool MainWindow::specializationMatches(const std::string& specialistSpecialization, const std::string& userSpecialization) {
     std::string lowerSpec = specialistSpecialization;
@@ -675,4 +815,20 @@ bool MainWindow::addressMatches(const Address& userAddress, const Address& speci
             userAddress.getStreet() == specialistAddress.getStreet() ||
             userAddress.getHouse() == specialistAddress.getHouse() ||
             userAddress.getApartment() == specialistAddress.getApartment());
+}
+bool MainWindow::areAllFieldsFilled(const QLineEdit* firstNameEdit, const QLineEdit* lastNameEdit, const QLineEdit* passwordEdit, const QLineEdit* countryEdit, const QLineEdit* regionEdit, const QLineEdit* cityEdit, const QLineEdit* streetEdit, const QLineEdit* houseEdit, const QLineEdit* apartmentEdit, const QLineEdit* contactEdit, const QLineEdit* specializationEdit, const QLineEdit* certificationsEdit) const {
+    if (firstNameEdit->text().isEmpty() || lastNameEdit->text().isEmpty() || passwordEdit->text().isEmpty() ||
+        countryEdit->text().isEmpty() || regionEdit->text().isEmpty() || cityEdit->text().isEmpty() ||
+        streetEdit->text().isEmpty() || houseEdit->text().isEmpty() || apartmentEdit->text().isEmpty() ||
+        contactEdit->text().isEmpty()) {
+        return false;
+        }
+    if (specializationEdit && certificationsEdit && (specializationEdit->text().isEmpty() || certificationsEdit->text().isEmpty())) {
+        return false;
+    }
+    return true;
+}
+void MainWindow::logout() {
+    loggedInUser = nullptr;
+    mainMenu();
 }

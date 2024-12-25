@@ -6,15 +6,19 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 find_package(Qt6 COMPONENTS Core Gui Widgets REQUIRED)
 
 set(SQLITE3_INCLUDE_DIR "C:/sqlite3")
 set(SQLITE3_LIBRARIES "C:/sqlite3/sqlite3.dll")
 
+# Используем find_library для Curl
+set(CURL_INCLUDE_DIR "C:/Users/micha/Downloads/curl-8.11.0_4-win64-mingw/curl-8.11.0_4-win64-mingw/include")
+set(CURL_LIBRARY_DIR "C:/Users/micha/Downloads/curl-8.11.0_4-win64-mingw/curl-8.11.0_4-win64-mingw/lib")
+find_library(CURL_LIB curl PATHS ${CURL_LIBRARY_DIR})
 
-include_directories(${SQLITE3_INCLUDE_DIR})
+
+include_directories(${SQLITE3_INCLUDE_DIR} ${CURL_INCLUDE_DIR})
 
 add_executable(StuffingService
         main.cpp
@@ -40,11 +44,14 @@ add_executable(StuffingService
         MyContainer.tpp
 )
 
+#  Объединяем все библиотеки в один вызов target_link_libraries
 target_link_libraries(StuffingService
         PRIVATE Qt6::Core
         PRIVATE Qt6::Gui
         PRIVATE Qt6::Widgets
-        PRIVATE ${SQLITE3_LIBRARIES})
+        PRIVATE ${SQLITE3_LIBRARIES}
+        PRIVATE ${CURL_LIB}
+)
 
 if (WIN32 AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     set(DEBUG_SUFFIX)
